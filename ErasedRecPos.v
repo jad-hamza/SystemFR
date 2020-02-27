@@ -44,7 +44,7 @@ Proof.
   - repeat step || simp_red || t_star_smallstep_from_value;
        eauto 3 using smallstep_succ_zero with exfalso.
     left; repeat step || find_exists || apply_any.
-    apply reducibility_subst_head with X;
+    apply reducible_values_subst_head with X;
       repeat step || list_utils || rewrite nat_value_fv in * by assumption;
       eauto 2 with twf;
       eauto 2 with wf.
