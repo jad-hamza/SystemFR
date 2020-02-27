@@ -6,20 +6,17 @@ Require Export SystemFR.EquivalenceLemmas.
 Open Scope list_scope.
 
 Definition reducibility_candidate (P: tree -> Prop): Prop :=
-  forall v, P v ->
-    is_erased_term v /\
-    cbv_value v /\
-    wf v 0 /\
-    pfv v term_var = nil /\
+  forall t, P t ->
+    is_erased_term t /\
+    wf t 0 /\
+    pfv t term_var = nil /\
     (
-      forall v1 v2,
-        P v1 ->
-        equivalent_terms v1 v2 ->
-        cbv_value v2 ->
-        P v2
+      forall t1 t2,
+        P t1 ->
+        equivalent_terms t1 t2 ->
+        P t2
     )
 .
-
 
 (* an interpretation is a map from type variables to reducibility candidates *)
 Definition interpretation: Type := list (nat * (tree -> Prop)).
@@ -41,88 +38,77 @@ Proof.
   steps.
 Qed.
 
-Lemma in_valid_interpretation_erased: forall theta v X P,
+Lemma in_valid_interpretation_erased: forall theta t X P,
   valid_interpretation theta ->
   lookup Nat.eq_dec theta X = Some P ->
-  P v ->
-  is_erased_term v.
+  P t ->
+  is_erased_term t.
 Proof.
   induction theta; repeat step || eauto || apply_any.
 Qed.
 
-Lemma in_valid_interpretation_wf: forall theta v X P,
+Lemma in_valid_interpretation_wf: forall theta t X P,
   valid_interpretation theta ->
   lookup Nat.eq_dec theta X = Some P ->
-  P v ->
-  wf v 0.
+  P t ->
+  wf t 0.
 Proof.
   induction theta; repeat step || eauto || apply_any.
 Qed.
 
-Lemma in_valid_interpretation_value: forall theta v X P,
+Lemma in_valid_interpretation_fv: forall theta t X P,
   valid_interpretation theta ->
   lookup Nat.eq_dec theta X = Some P ->
-  P v ->
-  cbv_value v.
+  P t ->
+  pfv t term_var = nil.
 Proof.
   induction theta; repeat step || eauto || apply_any.
 Qed.
 
-Lemma in_valid_interpretation_fv: forall theta v X P,
+Lemma in_valid_interpretation_tfv: forall theta t X P,
   valid_interpretation theta ->
   lookup Nat.eq_dec theta X = Some P ->
-  P v ->
-  pfv v term_var = nil.
-Proof.
-  induction theta; repeat step || eauto || apply_any.
-Qed.
-
-Lemma in_valid_interpretation_tfv: forall theta v X P,
-  valid_interpretation theta ->
-  lookup Nat.eq_dec theta X = Some P ->
-  P v ->
-  pfv v type_var = nil.
+  P t ->
+  pfv t type_var = nil.
 Proof.
   intros; eauto using is_erased_term_tfv, in_valid_interpretation_erased.
 Qed.
 
-Lemma in_valid_interpretation_pfv: forall theta v X P tag,
+Lemma in_valid_interpretation_pfv: forall theta t X P tag,
   valid_interpretation theta ->
   lookup Nat.eq_dec theta X = Some P ->
-  P v ->
-  pfv v tag = nil.
+  P t ->
+  pfv t tag = nil.
 Proof.
   destruct tag; eauto using in_valid_interpretation_fv, in_valid_interpretation_tfv.
 Qed.
 
-Lemma in_valid_interpretation_twf: forall theta v X P,
+Lemma in_valid_interpretation_twf: forall theta t X P,
   valid_interpretation theta ->
   lookup Nat.eq_dec theta X = Some P ->
-  P v ->
-  twf v 0.
+  P t ->
+  twf t 0.
 Proof.
   eauto using is_erased_term_twf, in_valid_interpretation_erased.
 Qed.
 
-Lemma in_valid_interpretation_equiv: forall theta v1 v2 X P,
+Lemma in_valid_interpretation_equiv: forall theta t1 t2 X P,
   valid_interpretation theta ->
   lookup Nat.eq_dec theta X = Some P ->
-  P v1 ->
-  equivalent_terms v1 v2 ->
-  cbv_value v2 ->
-  P v2.
+  P t1 ->
+  equivalent_terms t1 t2 ->
+  P t2.
 Proof.
   induction theta; repeat step || unfold reducibility_candidate in * || instantiate_any;
     try solve [ eapply_any; eauto ].
 Qed.
 
-Lemma in_valid_interpretation_equiv2: forall theta v1 v2 X P,
+Lemma in_valid_interpretation_equiv2: forall theta t1 t2 X P,
   valid_interpretation theta ->
   lookup Nat.eq_dec theta X = Some P ->
-  P v1 ->
-  equivalent_terms v2 v1 ->
-  cbv_value v2 ->
-  P v2.
+  P t1 ->
+  equivalent_terms t2 t1 ->
+  P t2.
 Proof.
   intros.
   eapply in_valid_interpretation_equiv; eauto using equivalent_sym.
