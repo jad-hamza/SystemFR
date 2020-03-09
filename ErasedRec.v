@@ -5,7 +5,7 @@ Require Import Coq.Lists.List.
 
 Require Export SystemFR.ReducibilitySubst.
 Require Export SystemFR.SomeTerms.
-Require Export SystemFR.NatCompare.
+Require Export SystemFR.NatLessThan.
 
 Opaque reducible_values.
 Opaque makeFresh.
@@ -631,7 +631,7 @@ Lemma equivalent_zero_contradiction:
     False.
 Proof.
   intros.
-  apply (equivalent_tlt_steps _ _ zero zero) in H;
+  apply (equivalent_tlt_terms_trans _ _ zero zero) in H;
     steps.
   apply equivalent_true in H.
   apply tlt_sound in H; steps; eauto with omega.

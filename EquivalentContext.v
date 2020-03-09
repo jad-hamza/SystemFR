@@ -197,18 +197,6 @@ Proof.
   find_middle_point; try solve [ find_context 0 ]; try solve [ find_context 1 ].
 Qed.
 
-Lemma equivalent_rec:
-  forall e1 e2 e3 e1' e2' e3',
-    equivalent_terms e1 e1' ->
-    equivalent_terms e2 e2' ->
-    equivalent_terms e3 e3' ->
-    equivalent_terms (notype_rec e1 e2 e3) (notype_rec e1' e2' e3').
-Proof.
-  intros.
-  find_middle_point; try solve [ find_context 2 ].
-  find_middle_point; try solve [ find_context 0 ].
-Qed.
-
 Lemma equivalent_value_pair:
   forall v1 v2 v',
     equivalent_terms (pp v1 v2) v' ->
