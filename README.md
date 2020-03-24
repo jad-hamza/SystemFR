@@ -2,7 +2,7 @@
 
 ### Description
 
-This project aims to formalize in Coq part of the [Stainless project](https://github.com/epfl-lara/stainless). It describes a call-by-value lambda-calculus and defines a rich type system (based on computations) that describes behaviors of lambda-calculus terms. Supported types include: System F polymorphism, recursive types, infinite intersections, refinement and dependent types, equality types.
+This project aims to formalize in Coq part of the [Stainless project](https://github.com/epfl-lara/stainless). It describes a call-by-value lambda-calculus and defines a rich type system based on computations, following the tradition of NuPRL (see [NuprlInCoq](https://github.com/vrahli/NuprlInCoq)). Supported types include: System F polymorphism, recursive types, infinite intersections, refinement and dependent types, equality types.
 
 ### Requirements
 

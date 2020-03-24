@@ -1,35 +1,28 @@
 Require Import PeanoNat.
+Require Import Relations.
 
 Require Export SystemFR.ErasedTermLemmas.
 Require Export SystemFR.EquivalenceLemmas.
 
 Open Scope list_scope.
 
-Definition reducibility_candidate (P: tree -> Prop): Prop :=
-  forall v, P v ->
-    is_erased_term v /\
-    cbv_value v /\
-    wf v 0 /\
-    pfv v term_var = nil /\
-    (
-      forall v1 v2,
-        P v1 ->
-        equivalent_terms v1 v2 ->
-        cbv_value v2 ->
-        P v2
-    )
-.
+Arguments PER { A }.
 
+Definition reducibility_candidate (R: tree -> tree -> Prop): Prop :=
+  PER R /\
+  forall t1 t2, R t1 t2 ->
+    closed_term t1 /\
+    (forall t, equivalent_terms t1 t -> R t t2).
 
 (* an interpretation is a map from type variables to reducibility candidates *)
-Definition interpretation: Type := list (nat * (tree -> Prop)).
+Definition interpretation: Type := list (nat * (tree -> tree -> Prop)).
 
-Definition pre_interpretation: Type := list (nat * (tree -> tree -> Prop)).
+Definition pre_interpretation: Type := list (nat * (tree -> tree -> tree -> Prop)).
 
 Fixpoint valid_interpretation (theta: interpretation): Prop :=
   match theta with
   | nil => True
-  | (x,P) :: theta' => valid_interpretation theta' /\ reducibility_candidate P
+  | (x, R) :: theta' => valid_interpretation theta' /\ reducibility_candidate R
   end.
 
 Lemma valid_interpretation_cons:
@@ -41,13 +34,56 @@ Proof.
   steps.
 Qed.
 
-Lemma in_valid_interpretation_erased: forall theta v X P,
+Lemma in_valid_interpretation_per: forall theta X R,
   valid_interpretation theta ->
-  lookup Nat.eq_dec theta X = Some P ->
-  P v ->
-  is_erased_term v.
+  lookup Nat.eq_dec theta X = Some R ->
+  PER R.
 Proof.
-  induction theta; repeat step || eauto || apply_any.
+  induction theta; repeat step || apply_any; eauto.
+Qed.
+
+Lemma PER_sym:
+  forall T (R: T -> T -> Prop) t1 t2,
+    R t1 t2 ->
+    PER R ->
+    R t2 t1.
+Proof.
+  intros.
+  destruct H0.
+  eauto with eapply_any.
+Qed.
+
+Lemma in_valid_interpretation_sym: forall theta t1 t2 X R,
+  valid_interpretation theta ->
+  lookup Nat.eq_dec theta X = Some R ->
+  R t1 t2 ->
+  R t2 t1.
+Proof.
+  intros.
+  eapply PER_sym; eauto.
+  eapply in_valid_interpretation_per; eauto.
+Qed.
+
+Lemma in_valid_interpretation_erased1: forall theta t1 t2 X R,
+  valid_interpretation theta ->
+  lookup Nat.eq_dec theta X = Some R ->
+  R t1 t2 ->
+  is_erased_term t1.
+Proof.
+  induction theta;
+    repeat step || apply_any || instantiate_any ||
+           unfold reducibility_candidate in *; eauto.
+Qed.
+
+Lemma in_valid_interpretation_erased2: forall theta t1 t2 X R,
+  valid_interpretation theta ->
+  lookup Nat.eq_dec theta X = Some R ->
+  R t1 t2 ->
+  is_erased_term t2.
+Proof.
+  intros.
+  eapply in_valid_interpretation_erased1; eauto.
+  eapply in_valid_interpretation_sym; eauto.
 Qed.
 
 Lemma in_valid_interpretation_wf: forall theta v X P,
