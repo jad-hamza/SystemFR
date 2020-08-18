@@ -19,6 +19,9 @@ Definition equivalent_terms t1 t2 :=
       star scbv_step (open 0 C t1) ttrue <->
       star scbv_step (open 0 C t2) ttrue.
 
+Notation "'[' t1 '≡' t2 ']'" := (equivalent_terms t1 t2)
+  (t1 at level 60, t2 at level 60).
+
 Ltac equivalence_instantiate C :=
   match goal with
   | H: equivalent_terms _ _ |- _ =>

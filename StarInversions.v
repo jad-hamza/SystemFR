@@ -12,6 +12,16 @@ Proof.
   unfold irred; destruct 1; repeat step || deterministic_step; eauto with exfalso.
 Qed.
 
+Lemma star_one_step_val:
+  forall t1 t2 v,
+    star scbv_step t1 v ->
+    scbv_step t1 t2 ->
+    cbv_value v ->
+    star scbv_step t2 v.
+Proof.
+  eauto using star_one_step, value_irred.
+Qed.
+
 Lemma star_one_step2:
   forall t1 t2 t2',
     star scbv_step t1 t2 ->

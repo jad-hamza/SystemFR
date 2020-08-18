@@ -1,75 +1,86 @@
 Require Import Equations.Equations.
 Require Import Coq.Lists.List.
 
-Require Export SystemFR.ReducibilityOpenEquivalent.
+Require Export SystemFR.OpenReducibilityDefinition.
+Require Export SystemFR.RedTactics.
 
 Opaque reducible_values.
 Opaque makeFresh.
 
 Lemma reducible_lambda:
-  forall theta t U V,
-    is_erased_term t ->
+  forall ρ t1 t2 U V,
+    is_erased_term t1 ->
+    is_erased_term t2 ->
     wf U 0 ->
-    wf t 1 ->
+    wf t1 1 ->
+    wf t2 1 ->
     pfv U term_var = nil ->
-    pfv t term_var = nil ->
-    valid_interpretation theta ->
+    pfv t1 term_var = nil ->
+    pfv t2 term_var = nil ->
+    valid_interpretation ρ ->
     is_erased_type V ->
-    (forall u, reducible_values theta u U -> reducible theta (open 0 t u) (open 0 V u)) ->
-    reducible_values theta (notype_lambda t) (T_arrow U V).
+    (forall u1 u2, reducible_values ρ u1 u2 U ->
+              reducible ρ (open 0 t1 u1) (open 0 t2 u2) (open 0 V u1)) ->
+    [ ρ ⊨v notype_lambda t1 ≡ notype_lambda t2 : T_arrow U V ].
 Proof.
-  repeat step || list_utils || simp_red || unfold closed_value, closed_term ||
-         rewrite reducibility_rewrite;
-    eauto 2 with cbvlemmas.
+  repeat step || list_utils || simp_red.
 
-  apply backstep_reducible with (open 0 t a); repeat step || list_utils;
-    eauto 2 with fv;
-    eauto 2 with wf;
-    eauto using red_is_val with smallstep.
+  eexists; eexists; repeat step || rewrite reducible_def; t_closer.
 Qed.
 
 Lemma open_reducible_lambda:
-  forall tvars gamma x t U V,
+  forall Θ Γ x t U V,
     wf U 0 ->
     wf t 1 ->
-    subset (fv_context gamma) (support gamma) ->
-    subset (fv U) (support gamma) ->
-    subset (fv t) (support gamma) ->
-    ~(x ∈ support gamma) ->
+    subset (fv_context Γ) (support Γ) ->
+    subset (fv U) (support Γ) ->
+    subset (fv t) (support Γ) ->
+    ~(x ∈ support Γ) ->
     ~(x ∈ fv t) ->
     ~(x ∈ fv V) ->
     is_erased_term t ->
     is_erased_type V ->
-    [ tvars; (x, U) :: gamma ⊨ open 0 t (fvar x term_var) : open 0 V (fvar x term_var) ] ->
-    [ tvars; gamma ⊨ notype_lambda t : T_arrow U V ].
+    [ Θ; (x, U) :: Γ ⊨ open 0 t (fvar x term_var) : open 0 V (fvar x term_var) ] ->
+    [ Θ; Γ ⊨ notype_lambda t : T_arrow U V ].
 Proof.
   unfold open_reducible in *; steps.
 
-  apply reducible_value_expr; repeat step.
-  apply reducible_lambda; repeat step;
-    eauto with wf;
-    eauto with fv;
-    eauto with erased.
+  apply reducible_value_expr; repeat step; eauto with erased.
+  apply reducible_lambda; steps; t_closer.
 
-  unshelve epose proof (H9 theta ((x,u) :: lterms) _ _ _);
+  unshelve epose proof (H9 ρ ((x, u1) :: l1) ((x, u2) :: l2) _ _ _);
     repeat step || apply SatCons || t_substitutions;
-    eauto with fv wf twf.
+    t_closer.
 Qed.
 
 Lemma reducible_app:
-  forall theta U V t1 t2,
-    valid_interpretation theta ->
+  forall ρ U V t1 t2 u1 u2,
+    valid_interpretation ρ ->
     is_erased_type V ->
     wf V 1 ->
     pfv V term_var = nil ->
-    reducible theta t1 (T_arrow U V) ->
-    reducible theta t2 U ->
-    reducible theta (app t1 t2) (open 0 V t2).
+    (forall u1 u2, [ ρ ⊨ u1 ≡ u2 : U ] -> [ ρ ⊨ open 0 V u1 = open 0 V u2 ]) ->
+    [ ρ ⊨ t1 ≡ t2 : T_arrow U V ] ->
+    [ ρ ⊨ u1 ≡ u2 : U ] ->
+    [ ρ ⊨ app t1 u1 ≡ app t2 u2 : open 0 V u1 ].
 Proof.
-  intros theta U V t1 t2 H1 H2.
-  unfold reducible, reduces_to in *;
-    repeat step || list_utils || simp_red || unfold reduces_to in *;
-    t_closer.
+  repeat step || list_utils || simp_red || top_level_unfold reducible || top_level_unfold reduces_to.
+
+  instantiate_reducible; repeat step || rewrite reducible_def in *; t_closer.
+
+  apply star_backstep_reducible with (open 0 t0 v1) (open 0 t3 v2); steps; t_closer;
+    eauto 8 using star_trans, star_one with cbvlemmas values smallstep.
+
+  eapply swap_equivalent_types; eauto.
+  apply_any.
+
+  exists v0, v3; steps;
+  - admit.
+  - eapply star_trans; eauto.
+    eapply star_trans; eauto with cbvlemmas.
+    eapply star_trans; eauto with cbvlemmas values.
+    apply star_one. eauto with values smallstep.
+    eauto using star_one, star_trans with star cbvlemmas.
 
   lazymatch goal with
   | H1: forall a, _,
@@ -85,12 +96,12 @@ Proof.
 Qed.
 
 Lemma reducible_app2:
-  forall theta e1 e2 U V,
+  forall ρ e1 e2 U V,
     wf V 0 ->
-    valid_interpretation theta ->
-    reducible theta e1 (T_arrow U V) ->
-    reducible theta e2 U ->
-    reducible theta (app e1 e2) V.
+    valid_interpretation ρ ->
+    reducible ρ e1 (T_arrow U V) ->
+    reducible ρ e2 U ->
+    reducible ρ (app e1 e2) V.
 Proof.
   intros; unfold reducible in *; unfold reduces_to in *;
     repeat step || list_utils || simp_red || instantiate_any || unfold reduces_to in *;
@@ -106,13 +117,13 @@ Proof.
 Qed.
 
 Lemma open_reducible_app:
-  forall tvars gamma U V t1 t2,
+  forall Θ Γ U V t1 t2,
     is_erased_type V ->
     wf V 1 ->
-    subset (fv V) (support gamma) ->
-    [ tvars; gamma ⊨ t1 : T_arrow U V ] ->
-    [ tvars; gamma ⊨ t2 : U ] ->
-    [ tvars; gamma ⊨  app t1 t2 : open 0 V t2 ].
+    subset (fv V) (support Γ) ->
+    [ Θ; Γ ⊨ t1 : T_arrow U V ] ->
+    [ Θ; Γ ⊨ t2 : U ] ->
+    [ Θ; Γ ⊨  app t1 t2 : open 0 V t2 ].
 Proof.
   unfold open_reducible in *;
     repeat step || t_substitutions;

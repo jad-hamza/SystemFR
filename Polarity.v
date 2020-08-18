@@ -1,8 +1,5 @@
 Require Import Equations.Equations.
 
-Require Import Omega.
-
-
 Require Export SystemFR.Syntax.
 Require Export SystemFR.SizeLemmas.
 Require Export SystemFR.NoTypeFVar.

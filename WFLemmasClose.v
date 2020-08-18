@@ -1,6 +1,4 @@
 Require Import Coq.Strings.String.
-Require Import Omega.
-
 Require Export SystemFR.Syntax.
 Require Export SystemFR.Tactics.
 Require Export SystemFR.AssocList.

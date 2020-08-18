@@ -4,15 +4,15 @@ Require Export SystemFR.AnnotatedEquivalentInContext.
 Opaque reducible_values.
 
 Lemma annotated_reducible_add_equality:
-  forall tvars gamma e1 e2 e1' e2' x,
+  forall Θ Γ e1 e2 e1' e2' x,
     ~ x ∈ pfv e1' term_var ->
     ~ x ∈ pfv e2' term_var ->
     ~ x ∈ pfv e1 term_var ->
     ~ x ∈ pfv e2 term_var ->
-    ~ x ∈ pfv_context gamma term_var ->
-    [[ tvars; (x, T_equiv e1' e2') :: gamma ⊨ e1 ≡ e2 ]] ->
-    [[ tvars; gamma ⊨ e1' ≡ e2' ]] ->
-    [[ tvars; gamma ⊨ e1 ≡ e2 ]].
+    ~ x ∈ pfv_context Γ term_var ->
+    [[ Θ; (x, T_equiv e1' e2') :: Γ ⊨ e1 ≡ e2 ]] ->
+    [[ Θ; Γ ⊨ e1' ≡ e2' ]] ->
+    [[ Θ; Γ ⊨ e1 ≡ e2 ]].
 Proof.
   unfold annotated_reducible;
     repeat step.
@@ -23,19 +23,19 @@ Proof.
 Qed.
 
 Lemma annotated_unfold_refinement:
-  forall tvars gamma gamma' e1 e2 x y T p,
+  forall Θ Γ Γ' e1 e2 x y T p,
     ~ y ∈ pfv p term_var ->
     ~ y ∈ pfv e1 term_var ->
     ~ y ∈ pfv e2 term_var ->
     ~ y ∈ pfv T term_var ->
-    ~ y ∈ pfv_context gamma term_var ->
-    ~ y ∈ pfv_context gamma' term_var ->
+    ~ y ∈ pfv_context Γ term_var ->
+    ~ y ∈ pfv_context Γ' term_var ->
     ~ x ∈ pfv p term_var ->
     ~ x = y ->
     is_annotated_term p ->
-    (forall z, z ∈ pfv p term_var -> z ∈ support gamma -> False) ->
-    [[ tvars; (y, T_equiv (open 0 p (fvar x term_var)) ttrue) :: gamma ++ (x, T_refine T p) :: gamma' ⊨ e1 ≡ e2 ]] ->
-    [[ tvars; gamma ++ (x, T_refine T p) :: gamma' ⊨ e1 ≡ e2 ]].
+    (forall z, z ∈ pfv p term_var -> z ∈ support Γ -> False) ->
+    [[ Θ; (y, T_equiv (open 0 p (fvar x term_var)) ttrue) :: Γ ++ (x, T_refine T p) :: Γ' ⊨ e1 ≡ e2 ]] ->
+    [[ Θ; Γ ++ (x, T_refine T p) :: Γ' ⊨ e1 ≡ e2 ]].
 Proof.
   intros.
   apply annotated_reducible_add_equality with (open 0 p (fvar x term_var)) ttrue y;

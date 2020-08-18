@@ -1,8 +1,5 @@
 Require Import Equations.Equations.
 Require Import Equations.Prop.Subterm.
-
-Require Import Omega.
-
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
 
@@ -14,22 +11,22 @@ Opaque reducible_values.
 
 Definition subset_rc (rc1 rc2: tree -> Prop) := forall v, rc1 v -> rc2 v.
 
-Fixpoint respect_polarities pols (theta1 theta2: interpretation) :=
-  match theta1, theta2 with
+Fixpoint respect_polarities pols (ρ1 ρ2: interpretation) :=
+  match ρ1, ρ2 with
   | nil, nil => True
-  | (X, rc1) :: theta1', (Y, rc2) :: theta2' =>
+  | (X, rc1) :: ρ1', (Y, rc2) :: ρ2' =>
     X = Y /\
     (~((X, Positive) ∈ pols) -> subset_rc rc2 rc1) /\
     (~((X, Negative) ∈ pols) -> subset_rc rc1 rc2) /\
-    respect_polarities pols theta1' theta2'
+    respect_polarities pols ρ1' ρ2'
   | _, _ => False
   end.
 
 Lemma respect_polarities_refl:
-  forall pols theta,
-    respect_polarities pols theta theta.
+  forall pols ρ,
+    respect_polarities pols ρ ρ.
 Proof.
-  induction theta; steps.
+  induction ρ; steps.
 Qed.
 
 Lemma invert_twice:
@@ -47,11 +44,11 @@ Proof.
 Qed.
 
 Lemma respect_polarities_invert:
-  forall pols theta1 theta2,
-    respect_polarities pols theta1 theta2 ->
-    respect_polarities (invert_polarities pols) theta2 theta1.
+  forall pols ρ1 ρ2,
+    respect_polarities pols ρ1 ρ2 ->
+    respect_polarities (invert_polarities pols) ρ2 ρ1.
 Proof.
-  induction theta1; repeat step || apply_any || apply pair_in_invert.
+  induction ρ1; repeat step || apply_any || apply pair_in_invert.
 Qed.
 
 Ltac t_respect_polarities_invert :=
@@ -62,37 +59,37 @@ Ltac t_respect_polarities_invert :=
   end.
 
 Definition polarity_variance_prop T: Prop :=
-  forall pols theta1 theta2 v,
+  forall pols ρ1 ρ2 v,
     has_polarities T pols ->
     is_erased_type T ->
     wf T 0 ->
     pfv T term_var = nil ->
-    respect_polarities pols theta1 theta2 ->
-    valid_interpretation theta1 ->
-    valid_interpretation theta2 ->
-    reducible_values theta1 v T ->
-    reducible_values theta2 v T.
+    respect_polarities pols ρ1 ρ2 ->
+    valid_interpretation ρ1 ->
+    valid_interpretation ρ2 ->
+    reducible_values ρ1 v T ->
+    reducible_values ρ2 v T.
 
 Lemma use_respect_polarities:
-  forall (pols : list (nat * polarity)) (theta1 theta2 : interpretation) (n : nat) (v : tree) P1 P2,
-    respect_polarities pols theta1 theta2 ->
+  forall (pols : list (nat * polarity)) (ρ1 ρ2 : interpretation) (n : nat) (v : tree) P1 P2,
+    respect_polarities pols ρ1 ρ2 ->
     ((n, Negative) ∈ pols -> False) ->
-    lookup Nat.eq_dec theta1 n = Some P1 ->
-    lookup Nat.eq_dec theta2 n = Some P2 ->
+    lookup Nat.eq_dec ρ1 n = Some P1 ->
+    lookup Nat.eq_dec ρ2 n = Some P2 ->
     P1 v ->
     P2 v.
 Proof.
-  induction theta1; steps; eauto with eapply_any.
+  induction ρ1; steps; eauto with eapply_any.
 Qed.
 
 Lemma respect_polarities_some_none:
-  forall (n : nat) (pols : list (nat * polarity)) (theta1 theta2 : interpretation) P,
-    respect_polarities pols theta1 theta2 ->
-    lookup Nat.eq_dec theta1 n = Some P ->
-    lookup Nat.eq_dec theta2 n = None ->
+  forall (n : nat) (pols : list (nat * polarity)) (ρ1 ρ2 : interpretation) P,
+    respect_polarities pols ρ1 ρ2 ->
+    lookup Nat.eq_dec ρ1 n = Some P ->
+    lookup Nat.eq_dec ρ2 n = None ->
     False.
 Proof.
-  induction theta1; steps; eauto.
+  induction ρ1; steps; eauto.
 Qed.
 
 Lemma polarity_variance_fvar: forall m n f, prop_at polarity_variance_prop m (fvar n f).
@@ -106,46 +103,46 @@ Qed.
 Hint Immediate polarity_variance_fvar: b_polarity_variance.
 
 Lemma polarity_variance_induction:
-  forall T n o pols theta1 theta2 v,
+  forall T n o pols ρ1 ρ2 v,
     prop_until polarity_variance_prop (n, o) ->
-    respect_polarities pols theta1 theta2 ->
+    respect_polarities pols ρ1 ρ2 ->
     has_polarities T pols ->
     type_nodes T < n ->
     is_erased_type T ->
     wf T 0 ->
     pfv T term_var = nil ->
-    valid_interpretation theta1 ->
-    valid_interpretation theta2 ->
-    reducible_values theta1 v T ->
-    reducible_values theta2 v T.
+    valid_interpretation ρ1 ->
+    valid_interpretation ρ2 ->
+    reducible_values ρ1 v T ->
+    reducible_values ρ2 v T.
 Proof.
   unfold prop_at; intros; unfold polarity_variance_prop; intros.
   eapply_any; eauto 1; repeat step || apply left_lex.
 Qed.
 
 Lemma polarity_variance_induction_invert:
-  forall T n o pols theta1 theta2 v,
+  forall T n o pols ρ1 ρ2 v,
     prop_until polarity_variance_prop (n, o) ->
-    respect_polarities pols theta1 theta2 ->
+    respect_polarities pols ρ1 ρ2 ->
     has_polarities T (invert_polarities pols) ->
     type_nodes T < n ->
     is_erased_type T ->
     wf T 0 ->
     pfv T term_var = nil ->
-    valid_interpretation theta1 ->
-    valid_interpretation theta2 ->
-    reducible_values theta2 v T ->
-    reducible_values theta1 v T.
+    valid_interpretation ρ1 ->
+    valid_interpretation ρ2 ->
+    reducible_values ρ2 v T ->
+    reducible_values ρ1 v T.
 Proof.
   unfold prop_at; intros; unfold polarity_variance_prop; intros.
-  eapply H with _ (invert_polarities pols) theta2; eauto 1; repeat step || apply left_lex;
+  eapply H with _ (invert_polarities pols) ρ2; eauto 1; repeat step || apply left_lex;
     eauto using respect_polarities_invert.
 Qed.
 
 Lemma polarity_variance_induction_open:
-  forall T a n o pols theta1 theta2 v,
+  forall T a n o pols ρ1 ρ2 v,
     prop_until polarity_variance_prop (n, o) ->
-    respect_polarities pols theta1 theta2 ->
+    respect_polarities pols ρ1 ρ2 ->
     has_polarities T pols ->
     type_nodes T < n ->
     is_erased_type T ->
@@ -154,11 +151,11 @@ Lemma polarity_variance_induction_open:
     is_erased_term a ->
     wf a 0 ->
     pfv a term_var = nil ->
-    valid_interpretation theta1 ->
-    valid_interpretation theta2 ->
+    valid_interpretation ρ1 ->
+    valid_interpretation ρ2 ->
     is_erased_type T ->
-    reducible_values theta1 v (open 0 T a) ->
-    reducible_values theta2 v (open 0 T a).
+    reducible_values ρ1 v (open 0 T a) ->
+    reducible_values ρ2 v (open 0 T a).
 Proof.
   unfold prop_at; intros; unfold polarity_variance_prop; intros.
   eapply_any; eauto 1;
@@ -172,8 +169,8 @@ Lemma polarity_variance_arrow:
 Proof.
   unfold get_measure, prop_at; intros; unfold polarity_variance_prop;
     repeat step || simp_red || step_inversion has_polarities || list_utils || t_reduces_to2 || apply_any;
-    try solve [ eapply polarity_variance_induction_invert; try eassumption; steps; eauto with omega ];
-    try solve [ eapply polarity_variance_induction_open; try eassumption; steps; eauto with omega ].
+    try solve [ eapply polarity_variance_induction_invert; try eassumption; steps; eauto with lia ];
+    try solve [ eapply polarity_variance_induction_open; try eassumption; steps; eauto with lia ].
 Qed.
 
 Hint Immediate polarity_variance_arrow: b_polarity_variance.
@@ -184,8 +181,8 @@ Proof.
   unfold prop_at; intros; unfold polarity_variance_prop;
     repeat step || simp_red || list_utils ||
            step_inversion has_polarities || t_reduces_to2 || apply_any || find_exists;
-    try solve [ eapply polarity_variance_induction; try eassumption; steps; eauto with omega ];
-    try solve [ eapply polarity_variance_induction_open; try eassumption; steps; eauto with omega ].
+    try solve [ eapply polarity_variance_induction; try eassumption; steps; eauto with lia ];
+    try solve [ eapply polarity_variance_induction_open; try eassumption; steps; eauto with lia ].
 Qed.
 
 Hint Immediate polarity_variance_prod: b_polarity_variance.
@@ -195,7 +192,7 @@ Lemma polarity_variance_sum:
 Proof.
   unfold prop_at; intros; unfold polarity_variance_prop;
     repeat step || simp_red || list_utils || step_inversion has_polarities || find_exists;
-    try solve [ eapply polarity_variance_induction; try eassumption; steps; eauto with omega ].
+    try solve [ eapply polarity_variance_induction; try eassumption; steps; eauto with lia ].
 Qed.
 
 Hint Immediate polarity_variance_sum: b_polarity_variance.
@@ -205,7 +202,7 @@ Lemma polarity_variance_refine:
 Proof.
   unfold prop_at; intros; unfold polarity_variance_prop;
     repeat step || simp_red || list_utils || step_inversion has_polarities || find_exists;
-    try solve [ eapply polarity_variance_induction; try eassumption; steps; eauto with omega ].
+    try solve [ eapply polarity_variance_induction; try eassumption; steps; eauto with lia ].
 Qed.
 
 Hint Immediate polarity_variance_refine: b_polarity_variance.
@@ -217,9 +214,9 @@ Lemma polarity_variance_type_refine:
 Proof.
   unfold prop_at; intros; unfold polarity_variance_prop;
     repeat step || simp_red || step_inversion has_polarities || list_utils || exists p;
-    try solve [ eapply polarity_variance_induction; try eassumption; steps; eauto with omega ];
+    try solve [ eapply polarity_variance_induction; try eassumption; steps; eauto with lia ];
     try solve [ eapply polarity_variance_induction_open; try eassumption; steps;
-                eauto with omega erased fv wf ].
+                eauto with lia erased fv wf ].
 Qed.
 
 Hint Immediate polarity_variance_type_refine: b_polarity_variance.
@@ -230,7 +227,7 @@ Proof.
   unfold prop_at; intros; unfold polarity_variance_prop;
     repeat step || simp_red || list_utils || step_inversion has_polarities;
     try solve [ eapply polarity_variance_induction; try eassumption; steps;
-                eauto with omega erased fv wf ].
+                eauto with lia erased fv wf ].
 Qed.
 
 Hint Immediate polarity_variance_intersection: b_polarity_variance.
@@ -247,7 +244,7 @@ Proof.
   unfold prop_at; intros; unfold polarity_variance_prop;
     repeat step || simp_red || step_inversion has_polarities || list_utils || reducibility_choice2;
     try solve [ eapply polarity_variance_induction; try eassumption; steps;
-                eauto with omega erased fv erased ].
+                eauto with lia erased fv erased ].
 Qed.
 
 Hint Immediate polarity_variance_union: b_polarity_variance.
@@ -260,8 +257,8 @@ Proof.
   unfold prop_at; intros; unfold polarity_variance_prop;
     repeat step || simp_red || step_inversion has_polarities || list_utils.
   eapply polarity_variance_induction_open; eauto 1; repeat step || apply leq_lt_measure || apply_any;
-    try omega;
-    try solve [ eapply polarity_variance_induction_invert; try eassumption; steps; eauto with omega erased ].
+    try lia;
+    try solve [ eapply polarity_variance_induction_invert; try eassumption; steps; eauto with lia erased ].
 Qed.
 
 Hint Immediate polarity_variance_forall: b_polarity_variance.
@@ -271,20 +268,20 @@ Lemma polarity_variance_exists:
 Proof.
   unfold prop_at; intros; unfold polarity_variance_prop;
     repeat step || simp_red || step_inversion has_polarities || list_utils || exists a;
-    try solve [ eapply polarity_variance_induction; try eassumption; steps; eauto with omega erased ];
-    try solve [ eapply polarity_variance_induction_open; try eassumption; steps; eauto with omega erased ].
+    try solve [ eapply polarity_variance_induction; try eassumption; steps; eauto with lia erased ];
+    try solve [ eapply polarity_variance_induction_open; try eassumption; steps; eauto with lia erased ].
 Qed.
 
 Hint Immediate polarity_variance_exists: b_polarity_variance.
 
 Lemma respect_polarities_support:
-  forall (pols : list (nat * polarity)) (theta1 theta2 : interpretation) X,
-    respect_polarities pols theta1 theta2 ->
-    ~(X ∈ support theta1) ->
-    X ∈ support theta2 ->
+  forall (pols : list (nat * polarity)) (ρ1 ρ2 : interpretation) X,
+    respect_polarities pols ρ1 ρ2 ->
+    ~(X ∈ support ρ1) ->
+    X ∈ support ρ2 ->
     False.
 Proof.
-  induction theta1; steps; eauto.
+  induction ρ1; steps; eauto.
 Qed.
 
 Lemma polarity_variance_abs:
@@ -292,7 +289,7 @@ Lemma polarity_variance_abs:
 Proof.
   unfold prop_at; intros; unfold polarity_variance_prop;
     repeat step || simp_red || step_inversion has_polarities.
-  exists (makeFresh ((X :: nil) :: support pols :: support theta2 :: pfv T type_var :: nil));
+  exists (makeFresh ((X :: nil) :: support pols :: support ρ2 :: pfv T type_var :: nil));
     repeat step; try finisher.
 
   repeat step || t_instantiate_rc || t_reduces_to.
@@ -304,7 +301,7 @@ Proof.
 
   lazymatch goal with
   | |- reducible_values ((?M,?RC) :: _) _ _ =>
-    eapply polarity_variance_induction with _ _ pols ((M,RC) :: theta1); eauto 1
+    eapply polarity_variance_induction with _ _ pols ((M,RC) :: ρ1); eauto 1
   end;
     repeat step || autorewrite with bsize in * ||
            apply has_polarities_topen; try finisher;
@@ -321,11 +318,11 @@ Ltac t_dangerous_rec_choice :=
 
 
 Lemma respect_polarities_cons:
-  forall (pols : list (nat * polarity)) (theta1 theta2 : interpretation) X pol,
-    respect_polarities pols theta1 theta2 ->
-    respect_polarities ((X, pol) :: pols) theta1 theta2.
+  forall (pols : list (nat * polarity)) (ρ1 ρ2 : interpretation) X pol,
+    respect_polarities pols ρ1 ρ2 ->
+    respect_polarities ((X, pol) :: pols) ρ1 ρ2.
 Proof.
-  induction theta1; steps.
+  induction ρ1; steps.
 Qed.
 
 Lemma polarity_variance_rec:
@@ -335,25 +332,25 @@ Proof.
     repeat step || simp_red || list_utils ||
            step_inversion has_polarities || t_dangerous_rec_choice || find_exists;
     try solve [ eapply polarity_variance_induction; try eassumption; steps;
-                eauto with omega erased fv wf].
+                eauto with lia erased fv wf].
 
-  define m (makeFresh (pfv T0 type_var :: pfv Ts type_var :: support pols :: support theta1 :: support theta2 :: nil)).
+  define m (makeFresh (pfv T0 type_var :: pfv Ts type_var :: support pols :: support ρ1 :: support ρ2 :: nil)).
   exists n', m;
     repeat step; try finisher.
 
-  define m (makeFresh (pfv T0 type_var :: pfv Ts type_var :: support pols :: support theta1 :: support theta2 :: nil)).
+  define m (makeFresh (pfv T0 type_var :: pfv Ts type_var :: support pols :: support ρ1 :: support ρ2 :: nil)).
   apply (reducible_rename_one _ _ _ _ _ m) in H17;
     repeat step;
       eauto using reducibility_is_candidate;
       try finisher.
 
-  define m (makeFresh (pfv T0 type_var :: pfv Ts type_var :: support pols :: support theta1 :: support theta2 :: nil)).
-  eapply (polarity_variance_induction _ _ _ ((m, Positive) :: pols) ((m, fun t : tree => reducible_values theta1 t (T_rec n' T0 Ts)) :: theta1)); eauto 1;
+  define m (makeFresh (pfv T0 type_var :: pfv Ts type_var :: support pols :: support ρ1 :: support ρ2 :: nil)).
+  eapply (polarity_variance_induction _ _ _ ((m, Positive) :: pols) ((m, fun t : tree => reducible_values ρ1 t (T_rec n' T0 Ts)) :: ρ1)); eauto 1;
     repeat step || list_utils || apply respect_polarities_cons || unfold subset_rc ||
            apply reducibility_is_candidate || autorewrite with bsize in *;
     try finisher;
     try solve [ eapply has_polarities_rename_one; eauto 1; steps; try finisher ];
-    eauto with omega;
+    eauto with lia;
     eauto with wf fv erased;
     eauto 2 with wf fv erased step_tactic.
 
@@ -379,20 +376,20 @@ Proof.
 Qed.
 
 Lemma positive_grow:
-  forall theta X rc1 rc2 v T pols,
+  forall ρ X rc1 rc2 v T pols,
     has_polarities (topen 0 T (fvar X type_var)) ((X, Positive) :: pols) ->
-    reducible_values ((X, rc1) :: theta) v (topen 0 T (fvar X type_var)) ->
+    reducible_values ((X, rc1) :: ρ) v (topen 0 T (fvar X type_var)) ->
     subset_rc rc1 rc2 ->
     is_erased_type T ->
     wf T 0 ->
     pfv T term_var = nil ->
-    valid_interpretation theta ->
+    valid_interpretation ρ ->
     reducibility_candidate rc1 ->
     reducibility_candidate rc2 ->
-    reducible_values ((X, rc2) :: theta) v (topen 0 T (fvar X type_var)).
+    reducible_values ((X, rc2) :: ρ) v (topen 0 T (fvar X type_var)).
 Proof.
   intros.
-  eapply (polarity_variance _ _ ((X,rc1) :: theta)); eauto 1; steps;
+  eapply (polarity_variance _ _ ((X,rc1) :: ρ)); eauto 1; steps;
     eauto 2 using respect_polarities_refl;
     eauto 2 with erased fv wf step_tactic.
 Qed.

@@ -1,40 +1,13 @@
 Require Import Coq.Strings.String.
-
-Require Export SystemFR.AssocList.
-Require Export SystemFR.Tactics.
+Require Import Relations.
+Require Import PeanoNat.
 
 Require Export SystemFR.ReducibilityCandidate.
-
-Require Import PeanoNat.
+Require Export SystemFR.Rel.
 
 Open Scope list_scope.
 
-Definition equivalent_rc (rc1 rc2: tree -> Prop) :=
-  forall t, rc1 t <-> rc2 t.
-
-Lemma equivalent_rc_left:
-  forall rc1 rc2 t,
-    equivalent_rc rc1 rc2 ->
-    rc1 t ->
-    rc2 t.
-Proof.
-  unfold equivalent_rc; intros; apply_any; assumption.
-Qed.
-
-Lemma equivalent_rc_right:
-  forall rc1 rc2 t,
-    equivalent_rc rc1 rc2 ->
-    rc2 t ->
-    rc1 t.
-Proof.
-  unfold equivalent_rc; intros; apply_any; assumption.
-Qed.
-
-Lemma equivalent_rc_sym:
-  forall rc1 rc2, equivalent_rc rc1 rc2 -> equivalent_rc rc2 rc1.
-Proof.
-  unfold equivalent_rc; repeat step || apply_any.
-Qed.
+Arguments same_relation { A }.
 
 Definition equivalent_with { T } (l1 l2: map nat T) (x y: nat) (equiv: T -> T -> Prop) :=
   (forall v1, lookup Nat.eq_dec l1 x = Some v1 ->
@@ -43,9 +16,9 @@ Definition equivalent_with { T } (l1 l2: map nat T) (x y: nat) (equiv: T -> T ->
   exists v1, lookup Nat.eq_dec l1 x = Some v1  /\ equiv v1 v2).
 
 Lemma equivalent_with_refl:
-  forall T theta x (equiv: T -> T -> Prop),
+  forall T ρ x (equiv: T -> T -> Prop),
     (forall v, equiv v v) ->
-    equivalent_with theta theta x x equiv.
+    equivalent_with ρ ρ x x equiv.
 Proof.
   unfold equivalent_with; steps; eauto.
 Qed.
@@ -96,19 +69,19 @@ Proof.
 Qed.
 
 Lemma equivalent_with_right:
-  forall T x y theta t (equiv: T -> T -> Prop),
+  forall T x y ρ t (equiv: T -> T -> Prop),
     x <> y ->
     (forall v, equiv v v) ->
-    equivalent_with theta ((x,t) :: theta) y y equiv.
+    equivalent_with ρ ((x,t) :: ρ) y y equiv.
 Proof.
   unfold equivalent_with; steps; eauto.
 Qed.
 
 Lemma equivalent_with_left:
-  forall T x y theta t (equiv: T -> T -> Prop),
+  forall T x y ρ t (equiv: T -> T -> Prop),
     x <> y ->
     (forall v, equiv v v) ->
-    equivalent_with ((x,t) :: theta) theta y y equiv.
+    equivalent_with ((x,t) :: ρ) ρ y y equiv.
 Proof.
   unfold equivalent_with; steps; eauto.
 Qed.
@@ -124,13 +97,13 @@ Proof.
 Qed.
 
 Lemma instantiate_rel:
-  forall T rel theta theta' x y P (equiv: T -> T -> Prop),
-    equivalent_with_relation rel theta theta' equiv ->
+  forall T rel ρ ρ' x y P (equiv: T -> T -> Prop),
+    equivalent_with_relation rel ρ ρ' equiv ->
     lookup Nat.eq_dec rel x = Some y ->
     lookup Nat.eq_dec (swap rel) y = Some x ->
-    lookup Nat.eq_dec theta x = Some P ->
+    lookup Nat.eq_dec ρ x = Some P ->
     (exists P', equiv P P' /\
-           lookup Nat.eq_dec theta' y = Some P').
+           lookup Nat.eq_dec ρ' y = Some P').
 Proof.
   unfold equivalent_with_relation, equivalent_with; intros;
   match goal with
@@ -140,13 +113,13 @@ Proof.
 Qed.
 
 Lemma instantiate_rel2:
-  forall T rel theta theta' x y P' (equiv: T -> T -> Prop),
-    equivalent_with_relation rel theta theta' equiv ->
+  forall T rel ρ ρ' x y P' (equiv: T -> T -> Prop),
+    equivalent_with_relation rel ρ ρ' equiv ->
     lookup Nat.eq_dec rel x = Some y ->
     lookup Nat.eq_dec (swap rel) y = Some x ->
-    lookup Nat.eq_dec theta' y = Some P' ->
+    lookup Nat.eq_dec ρ' y = Some P' ->
     (exists P, equiv P P' /\
-           lookup Nat.eq_dec theta x = Some P).
+           lookup Nat.eq_dec ρ x = Some P).
 Proof.
   unfold equivalent_with_relation, equivalent_with; intros;
   match goal with
@@ -157,16 +130,16 @@ Qed.
 
 Ltac t_instantiate_rel :=
   lazymatch goal with
-  | H1: equivalent_with_relation ?rel ?theta ?theta' ?equiv,
+  | H1: equivalent_with_relation ?rel ?ρ ?ρ' ?equiv,
     H2: lookup _ ?rel ?x = Some ?y,
     H3: lookup _ (swap ?rel) ?y = Some ?x,
-    H4: lookup _ ?theta ?x = Some ?t |- _ =>
+    H4: lookup _ ?ρ ?x = Some ?t |- _ =>
       poseNew (Mark (x,y,t) "equivalent_with_relation");
       pose proof (instantiate_rel _ _ _ _ _ _ _ _ H1 H2 H3 H4)
-  | H1: equivalent_with_relation ?rel ?theta ?theta' ?equiv,
+  | H1: equivalent_with_relation ?rel ?ρ ?ρ' ?equiv,
     H2: lookup _ ?rel ?x = Some ?y,
     H3: lookup _ (swap ?rel) ?y = Some ?x,
-    H4: lookup _ ?theta' ?y = Some ?t |- _ =>
+    H4: lookup _ ?ρ' ?y = Some ?t |- _ =>
       poseNew (Mark (x,y,t) "equivalent_with_relation");
       pose proof (instantiate_rel2 _ _ _ _ _ _ _ _ H1 H2 H3 H4)
   end.

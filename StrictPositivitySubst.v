@@ -16,9 +16,6 @@ Require Export SystemFR.FVLemmasLists.
 Require Export SystemFR.AssocList.
 
 Require Import Coq.Lists.List.
-
-Require Import Omega.
-
 Opaque strictly_positive.
 
 Lemma strictly_positive_subst_aux:
@@ -30,13 +27,13 @@ Lemma strictly_positive_subst_aux:
     strictly_positive T vars ->
     strictly_positive (psubstitute T lterms term_var) vars.
 Proof.
-  induction n; destruct T; repeat step || destruct_tag || simp_spos; try omega;
+  induction n; destruct T; repeat step || destruct_tag || simp_spos; try lia;
     eauto using no_type_fvar_subst;
-    eauto with omega.
+    eauto with lia.
   right; exists X; steps; eauto using pfv_in_subst.
   rewrite substitute_topen2; steps.
   apply_any; repeat step || autorewrite with bsize in * || apply is_erased_type_topen;
-    eauto with omega.
+    eauto with lia.
 Qed.
 
 Lemma strictly_positive_subst:

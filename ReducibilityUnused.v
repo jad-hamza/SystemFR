@@ -13,48 +13,48 @@ Opaque reducible_values.
 Opaque makeFresh.
 
 Lemma reducible_unused2:
-  forall t T (X : nat) (theta : interpretation) (RC : tree -> Prop),
+  forall t T (X : nat) (ρ : interpretation) (RC : tree -> Prop),
     (X ∈ pfv T type_var -> False) ->
-    reducible_values theta t T ->
-    reducible_values ((X, RC) :: theta) t T.
+    reducible_values ρ t T ->
+    reducible_values ((X, RC) :: ρ) t T.
 Proof.
   intros.
-  unshelve epose proof (reducible_rename T T t theta ((X,RC) :: theta) (idrel (pfv T type_var)) _ _ _);
-    repeat step || apply equivalent_with_idrel || apply equal_with_idrel || apply equivalent_rc_refl.
+  unshelve epose proof (reducible_rename T T t ρ ((X,RC) :: ρ) (idrel (pfv T type_var)) _ _ _);
+    repeat step || apply equivalent_with_idrel || apply equal_with_idrel || apply same_relation_refl.
 Qed.
 
 Lemma reducible_unused3:
-  forall t T (X : nat) (theta : interpretation) (RC : tree -> Prop),
-    reducible_values ((X, RC) :: theta) t T ->
+  forall t T (X : nat) (ρ : interpretation) (RC : tree -> Prop),
+    reducible_values ((X, RC) :: ρ) t T ->
     (X ∈ pfv T type_var -> False) ->
-    reducible_values theta t T.
+    reducible_values ρ t T.
 Proof.
   intros.
-  unshelve epose proof (reducible_rename T T t ((X,RC) :: theta) theta (idrel (pfv T type_var)) _ _ _);
-    repeat step || apply equivalent_with_idrel2 || apply equal_with_idrel || apply equivalent_rc_refl.
+  unshelve epose proof (reducible_rename T T t ((X,RC) :: ρ) ρ (idrel (pfv T type_var)) _ _ _);
+    repeat step || apply equivalent_with_idrel2 || apply equal_with_idrel || apply same_relation_refl.
 Qed.
 
 Lemma satisfies_unused:
-  forall (gamma : list (nat * tree)) lterms (X : nat) (theta : interpretation) RC,
-    (X ∈ pfv_context gamma type_var -> False) ->
-    satisfies (reducible_values theta) gamma lterms ->
-    satisfies (reducible_values ((X, RC) :: theta)) gamma lterms.
+  forall (Γ : list (nat * tree)) lterms (X : nat) (ρ : interpretation) RC,
+    (X ∈ pfv_context Γ type_var -> False) ->
+    satisfies (reducible_values ρ) Γ lterms ->
+    satisfies (reducible_values ((X, RC) :: ρ)) Γ lterms.
 Proof.
-  induction gamma as [ | [ x T ] gamma' IH ]; destruct lterms;
+  induction Γ as [ | [ x T ] Γ' IH ]; destruct lterms;
     repeat step || t_termlist || step_inversion satisfies || list_utils ||
            apply SatCons || apply reducible_unused2 ||
            (rewrite fv_subst_different_tag in * by (steps; eauto with fv)).
 Qed.
 
 Lemma reducible_unused_middle:
-  forall X RC theta1 theta2 v T,
-    no_type_fvar T (support theta1) -> (
-      reducible_values ((X,RC) :: theta1 ++ theta2) v T <->
-      reducible_values ((X,RC) :: theta2) v T
+  forall X RC ρ1 ρ2 v T,
+    no_type_fvar T (support ρ1) -> (
+      reducible_values ((X,RC) :: ρ1 ++ ρ2) v T <->
+      reducible_values ((X,RC) :: ρ2) v T
     ).
 Proof.
   repeat step.
-  - apply reducible_rename with T ((X, RC) :: theta1 ++ theta2) (idrel (pfv T type_var));
+  - apply reducible_rename with T ((X, RC) :: ρ1 ++ ρ2) (idrel (pfv T type_var));
       repeat unfold equivalent_with_relation, equivalent_with ||
              step || apply valid_interpretation_append ||
              (progress rewrite swap_idrel in * by steps) ||
@@ -62,57 +62,57 @@ Proof.
              unfold no_type_fvar in * ||
              unshelve eauto with exfalso || exact True;
       eauto using equal_with_idrel;
-      eauto using equivalent_rc_refl.
+      eauto using same_relation_refl.
 
-    exists v2; repeat step || rewrite lookupRight || apply lookupNoneSupport; eauto using equivalent_rc_refl.
-  - apply reducible_rename with T ((X, RC) :: theta2) (idrel (pfv T type_var));
+    exists v2; repeat step || rewrite lookupRight || apply lookupNoneSupport; eauto using same_relation_refl.
+  - apply reducible_rename with T ((X, RC) :: ρ2) (idrel (pfv T type_var));
       repeat step || apply valid_interpretation_append || (rewrite swap_idrel in * by steps) ||
              t_idrel_lookup2 || t_lookupor || t_lookup_rewrite || t_lookup ||
              unfold equivalent_with_relation, equivalent_with || unfold no_type_fvar in * ||
              unshelve eauto with exfalso || exact True;
       eauto using equal_with_idrel;
-      eauto using equivalent_rc_refl.
+      eauto using same_relation_refl.
 
-    exists v1; repeat step || rewrite lookupRight || apply lookupNoneSupport; eauto using equivalent_rc_refl.
+    exists v1; repeat step || rewrite lookupRight || apply lookupNoneSupport; eauto using same_relation_refl.
 Qed.
 
 Ltac t_reducible_unused3 :=
   match goal with
-  | H: reducible_values ((?X,?RC) :: ?theta) ?v ?T |- reducible_values ?theta' ?v ?T =>
-    unify theta theta'; apply reducible_unused3 with X RC
+  | H: reducible_values ((?X,?RC) :: ?ρ) ?v ?T |- reducible_values ?ρ' ?v ?T =>
+    unify ρ ρ'; apply reducible_unused3 with X RC
   end.
 
 Lemma reducible_unused_many1:
-  forall theta' theta T v,
-    no_type_fvar T (support theta') ->
-    reducible_values (theta' ++ theta) v T ->
-    reducible_values theta v T.
+  forall ρ' ρ T v,
+    no_type_fvar T (support ρ') ->
+    reducible_values (ρ' ++ ρ) v T ->
+    reducible_values ρ v T.
 Proof.
-  induction theta';
-    repeat step || (poseNew (Mark 0 "once"); eapply IHtheta') || t_reducible_unused3 ||
+  induction ρ';
+    repeat step || (poseNew (Mark 0 "once"); eapply IHρ') || t_reducible_unused3 ||
            apply valid_interpretation_append || apply valid_interpretation_all || unfold sat in * ||
            unfold reducibility_candidate in * || instantiate_any;
     eauto with b_no_type_fvar.
 Qed.
 
 Lemma reducible_unused_many2:
-  forall theta' theta T v,
-    no_type_fvar T (support theta') ->
-    reducible_values theta v T ->
-    reducible_values (theta' ++ theta) v T.
+  forall ρ' ρ T v,
+    no_type_fvar T (support ρ') ->
+    reducible_values ρ v T ->
+    reducible_values (ρ' ++ ρ) v T.
 Proof.
-  induction theta';
-    repeat step || (poseNew (Mark 0 "once"); eapply IHtheta') || apply reducible_unused2 ||
+  induction ρ';
+    repeat step || (poseNew (Mark 0 "once"); eapply IHρ') || apply reducible_unused2 ||
            apply valid_interpretation_append || apply valid_interpretation_all || unfold sat in * ||
            unfold reducibility_candidate in * || instantiate_any;
     eauto with b_no_type_fvar.
 Qed.
 
 Lemma reducible_unused_many:
-  forall theta' theta T v,
-    no_type_fvar T (support theta') -> (
-      reducible_values (theta' ++ theta) v T <->
-      reducible_values theta v T
+  forall ρ' ρ T v,
+    no_type_fvar T (support ρ') -> (
+      reducible_values (ρ' ++ ρ) v T <->
+      reducible_values ρ v T
     ).
 Proof.
   intuition auto; eauto using reducible_unused_many1, reducible_unused_many2.

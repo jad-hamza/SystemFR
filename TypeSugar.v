@@ -38,14 +38,14 @@ Proof.
 Qed.
 
 Lemma reducible_values_type_prop:
-  forall theta t T p,
+  forall ρ t T p,
     wf t 0 ->
     is_erased_type T ->
     wf T 0 ->
     pfv T term_var = nil ->
-    valid_interpretation theta ->
-    reducible_values theta p (T_reducible t T) ->
-    reducible theta t T.
+    valid_interpretation ρ ->
+    reducible_values ρ p (T_reducible t T) ->
+    reducible ρ t T.
 Proof.
   unfold T_reducible;
     repeat step || simp_red || (rewrite open_none in * by t_closer).
@@ -55,14 +55,14 @@ Proof.
 Qed.
 
 Lemma reducible_type_prop:
-  forall theta t T p,
+  forall ρ t T p,
     wf t 0 ->
     is_erased_type T ->
     wf T 0 ->
     pfv T term_var = nil ->
-    valid_interpretation theta ->
-    reducible theta p (T_reducible t T) ->
-    reducible theta t T.
+    valid_interpretation ρ ->
+    reducible ρ p (T_reducible t T) ->
+    reducible ρ t T.
 Proof.
   intros.
   top_level_unfold reducible; top_level_unfold reduces_to;
@@ -71,11 +71,11 @@ Proof.
 Qed.
 
 Lemma reducible_values_prop_type:
-  forall theta t T,
-    reducible theta t T ->
-    reducible_values theta uu (T_reducible t T).
+  forall ρ t T,
+    reducible ρ t T ->
+    reducible_values ρ uu (T_reducible t T).
 Proof.
-  unfold T_reducible, reducible, reduces_to;
+  unfold T_reducible, reduces_to;
     repeat step || simp_red;
     t_closer.
 

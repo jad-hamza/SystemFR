@@ -1,10 +1,9 @@
+Require Import Psatz.
+
 Require Export SystemFR.TWFLemmas.
 Require Export SystemFR.ErasedTermLemmas.
 
-Require Import PeanoNat.
-Require Import Omega.
-
-Opaque Nat.eq_dec.
+Require Import Coq.Arith.PeanoNat.
 
 Fixpoint swap_type_holes t i j :=
   match t with
@@ -101,7 +100,7 @@ Lemma open_swap:
     topen j1 (topen j2 t rep2) rep1 =
     topen j1 (topen j2 (swap_type_holes t j1 j2) rep1) rep2).
 Proof.
-  induction t; repeat step || t_equality || rewrite topen_none; eauto with twf omega.
+  induction t; repeat step || t_equality || rewrite topen_none; eauto with twf lia.
 Qed.
 
 Lemma swap_nothing:
@@ -111,7 +110,7 @@ Lemma swap_nothing:
     k <= j ->
     swap_type_holes T i j = T.
 Proof.
-  induction T; repeat step || t_equality; eauto with omega.
+  induction T; repeat step || t_equality; eauto with lia.
 Qed.
 
 Lemma is_erased_swap:
@@ -120,10 +119,12 @@ Lemma is_erased_swap:
     is_erased_type (swap_type_holes T i j).
 Proof.
   induction T; repeat step || apply_any || rewrite (swap_nothing _ 0);
-    eauto with omega twf.
+    eauto with lia twf.
 Qed.
 
 Hint Resolve is_erased_swap: erased.
+
+Opaque Nat.eq_dec.
 
 Lemma twf_swap:
   forall T k rep,
@@ -131,7 +132,7 @@ Lemma twf_swap:
     twf T (S k) ->
     twf (topen (S k) (swap_type_holes T k (S k)) rep) k.
 Proof.
-  induction T; steps; eauto with twf omega.
+  induction T; steps; eauto with twf lia.
 Qed.
 
 Hint Resolve twf_swap: twf.
@@ -142,7 +143,7 @@ Lemma twf_swap2:
     twf T (S (S k)) ->
     twf (topen (S k) (swap_type_holes T k (S k)) rep) (S k).
 Proof.
-  induction T; repeat step || unshelve eauto with twf omega.
+  induction T; repeat step || unshelve eauto with twf lia.
 Qed.
 
 Hint Resolve twf_swap2: twf.
@@ -179,7 +180,7 @@ Lemma topen_swap:
     swap_type_holes (topen j T rep) j i.
 Proof.
   induction T; repeat step || t_equality || rewrite (swap_nothing _ 0);
-    try omega.
+    try lia.
 Qed.
 
 Lemma topen_swap2:
@@ -191,5 +192,5 @@ Lemma topen_swap2:
     swap_type_holes (topen k T rep) j i.
 Proof.
   induction T; repeat step || t_equality || rewrite (swap_nothing _ 0);
-    try omega.
+    try lia.
 Qed.

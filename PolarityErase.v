@@ -1,7 +1,4 @@
 Require Import Equations.Equations.
-
-Require Import Omega.
-
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
 
@@ -71,11 +68,11 @@ Lemma has_polarities_erase_aux:
     has_polarities T pols ->
     has_polarities (erase_type T) pols.
 Proof.
-  induction n; destruct T; steps; try omega;
+  induction n; destruct T; steps; try lia;
     repeat
       step || step_inversion has_polarities || constructor || exists X || t_fv_erase ||
       rewrite <- erase_type_topen2 || apply_any || autorewrite with bsize in *;
-        eauto with omega;
+        eauto with lia;
         eauto 2 with annot step_tactic.
 Qed.
 
@@ -100,7 +97,7 @@ Proof.
     repeat step || constructor || step_inversion has_polarities || exists X || t_pfv_in_subst || eapply_any ||
            autorewrite with bsize in * ||
            (rewrite substitute_topen2 by steps);
-      eauto with omega.
+      eauto with lia.
 Qed.
 
 Lemma has_polarities_subst:
@@ -114,10 +111,10 @@ Proof.
 Qed.
 
 Lemma has_polarities_subst_erase:
-  forall (X : nat) (gamma : map nat tree) (Ts : tree) (theta : interpretation) l pols,
+  forall (X : nat) (Γ : map nat tree) (Ts : tree) (ρ : interpretation) l pols,
     is_annotated_type Ts ->
     has_polarities (topen 0 Ts (fvar X type_var)) pols ->
-    satisfies (reducible_values theta) (erase_context gamma) l ->
+    satisfies (reducible_values ρ) (erase_context Γ) l ->
     has_polarities (topen 0 (psubstitute (erase_type Ts) l term_var) (fvar X type_var)) pols.
 Proof.
   steps.

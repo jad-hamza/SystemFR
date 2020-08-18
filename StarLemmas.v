@@ -123,7 +123,6 @@ Hint Resolve star_smallstep_app_r: cbvlemmas.
 Hint Resolve star_smallstep_pp_l: cbvlemmas.
 Hint Resolve star_smallstep_pp_r: cbvlemmas.
 
-
 Lemma star_smallstep_pp:
   forall t1 v t2 t2',
     cbv_value v ->

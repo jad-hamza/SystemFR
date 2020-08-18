@@ -3,306 +3,465 @@ Require Import Coq.Strings.String.
 Require Import Equations.Equations.
 
 Require Export SystemFR.TermList.
-Require Export SystemFR.SizeLemmas.
-Require Export SystemFR.StarLemmas.
-Require Export SystemFR.StarInversions.
-Require Export SystemFR.ErasedTermLemmas.
-
 Require Export SystemFR.FVLemmasEval.
 Require Export SystemFR.WFLemmasEval.
-Require Export SystemFR.TWFLemmas.
-
-Require Export SystemFR.ReducibilityCandidate.
 Require Export SystemFR.ReducibilityDefinition.
-
-Require Import Omega.
-
 Opaque reducible_values. (* workaround for rewriting speed *)
 
-Lemma reducible_values_closed:
-  forall theta v T,
-    reducible_values theta v T ->
-    valid_interpretation theta ->
-    closed_value v.
+Lemma reducible_values_closed_1:
+  forall ρ v1 v2 T,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    closed_value v1.
 Proof.
   destruct T;
     repeat simp_red || step || destruct_tag || unfold closed_value, closed_term in *;
-      eauto using in_valid_interpretation_erased with erased;
-      eauto using in_valid_interpretation_pfv with fv;
-      eauto using in_valid_interpretation_wf with wf;
-      eauto using in_valid_interpretation_value;
+      eauto using in_valid_interpretation_erased1 with erased;
+      eauto using in_valid_interpretation_pfv1 with fv;
+      eauto using in_valid_interpretation_wf1 with wf;
+      eauto using in_valid_interpretation_value1;
       eauto 2 using is_nat_value_erased;
       eauto 2 using is_nat_value_value.
 Qed.
 
-Ltac t_reducible_values_closed :=
-  match goal with
-  | H1: valid_interpretation ?theta, H2: reducible_values ?theta ?v ?T |- _ =>
-      poseNew (Mark v "reducible_values_closed");
-      pose proof (reducible_values_closed _ _ _ H2 H1)
-  end.
+Lemma reducible_values_closed_2:
+  forall ρ v1 v2 T,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    closed_value v2.
+Proof.
+  destruct T;
+    repeat simp_red || step || destruct_tag || unfold closed_value, closed_term in *;
+      eauto using in_valid_interpretation_erased2 with erased;
+      eauto using in_valid_interpretation_pfv2 with fv;
+      eauto using in_valid_interpretation_wf2 with wf;
+      eauto using in_valid_interpretation_value2;
+      eauto 2 using is_nat_value_erased;
+      eauto 2 using is_nat_value_value.
+Qed.
 
 Lemma reducible_values_props:
-  forall theta t T tag,
-    reducible_values theta t T ->
-    valid_interpretation theta ->
-      (is_erased_term t /\ pfv t tag = nil /\ wf t 0 /\ cbv_value t).
+  forall ρ v1 v2 T tag,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+      (
+        is_erased_term v1 /\ pfv v1 tag = nil /\ wf v1 0 /\ cbv_value v1 /\
+        is_erased_term v2 /\ pfv v2 tag = nil /\ wf v2 0 /\ cbv_value v2
+      ).
 Proof.
-  intros theta t T tag H1 H2; destruct tag;
-    pose proof (reducible_values_closed theta t T H1 H2);
+  intros ρ v1 v2 T tag H1 H2; destruct tag;
+    pose proof (reducible_values_closed_1 ρ v1 v2 T H1 H2);
+    pose proof (reducible_values_closed_2 ρ v1 v2 T H1 H2);
     unfold closed_value, closed_term in *; steps;
       eauto using is_erased_term_tfv.
 Qed.
 
-Lemma reducible_values_erased:
-  forall theta t T,
-    reducible_values theta t T ->
-    valid_interpretation theta ->
-    is_erased_term t.
+Lemma reducible_values_erased_1:
+  forall ρ v1 v2 T,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    is_erased_term v1.
 Proof.
-  intros theta t T H1 H2.
-  pose proof (reducible_values_props theta t T term_var H1 H2); steps.
+  intros ρ v1 v2 T H1 H2.
+  pose proof (reducible_values_props ρ v1 v2 T term_var H1 H2); steps.
 Qed.
 
-Hint Immediate reducible_values_erased: erased.
+Hint Immediate reducible_values_erased_1: erased.
 
-Lemma reducible_erased:
-  forall theta t T,
-    reducible theta t T ->
-    valid_interpretation theta ->
-    is_erased_term t.
+Lemma reducible_values_erased_2:
+  forall ρ v1 v2 T,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    is_erased_term v2.
 Proof.
-  unfold reducible, reduces_to, closed_term; steps.
+  intros ρ v1 v2 T H1 H2.
+  pose proof (reducible_values_props ρ v1 v2 T term_var H1 H2); steps.
 Qed.
 
-Hint Immediate reducible_erased: erased.
+Hint Immediate reducible_values_erased_2: erased.
 
-Lemma reducible_val_fv:
-  forall theta t T tag,
-    reducible_values theta t T ->
-    valid_interpretation theta ->
-    pfv t tag = nil.
+Lemma reducible_erased_1:
+  forall ρ t1 t2 T,
+    [ ρ ⊨ t1 ≡ t2 : T ] ->
+    valid_interpretation ρ ->
+    is_erased_term t1.
 Proof.
-  intros theta t T tag H1 H2.
-  pose proof (reducible_values_props theta t T tag H1 H2); steps.
+  unfold reduces_to, closed_term; steps.
 Qed.
 
-Hint Immediate reducible_val_fv: fv.
+Lemma reducible_erased_2:
+  forall ρ t1 t2 T,
+    [ ρ ⊨ t1 ≡ t2 : T ] ->
+    valid_interpretation ρ ->
+    is_erased_term t2.
+Proof.
+  unfold reduces_to, closed_term; steps.
+Qed.
 
-Lemma fv_red:
-  forall t x tag theta T,
-    valid_interpretation theta ->
-    reducible_values theta t T ->
-    x ∈ pfv t tag ->
+Hint Immediate reducible_erased_1: erased.
+Hint Immediate reducible_erased_2: erased.
+
+Lemma reducible_val_fv_1:
+  forall ρ v1 v2 T tag,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    pfv v1 tag = nil.
+Proof.
+  intros ρ v1 v2 T tag H1 H2.
+  pose proof (reducible_values_props ρ v1 v2 T tag H1 H2); steps.
+Qed.
+
+Lemma reducible_val_fv_2:
+  forall ρ v1 v2 T tag,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    pfv v2 tag = nil.
+Proof.
+  intros ρ v1 v2 T tag H1 H2.
+  pose proof (reducible_values_props ρ v1 v2 T tag H1 H2); steps.
+Qed.
+
+Hint Immediate reducible_val_fv_1: fv.
+Hint Immediate reducible_val_fv_2: fv.
+
+Lemma fv_red_1:
+  forall v1 v2 x tag ρ T,
+    valid_interpretation ρ ->
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    x ∈ pfv v1 tag ->
     False.
 Proof.
-  intros; erewrite reducible_val_fv in *; eauto; steps.
+  intros; erewrite reducible_val_fv_1 in *; eauto; steps.
 Qed.
 
-Ltac t_fv_red :=
-  match goal with
-  | H1: valid_interpretation ?theta, H2: reducible_values ?theta ?t _, H3: _ ∈ pfv ?t _ |- _ =>
-    apply False_ind; apply (fv_red _ _ _ _ _ H1 H2 H3)
-  end.
-
-Lemma reducible_val_wf:
-  forall theta t T k,
-    reducible_values theta t T ->
-    valid_interpretation theta ->
-    wf t k.
+Lemma fv_red_2:
+  forall v1 v2 x tag ρ T,
+    valid_interpretation ρ ->
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    x ∈ pfv v2 tag ->
+    False.
 Proof.
-  intros theta t T k H1 H2.
-  pose proof (reducible_values_props theta t T term_var H1 H2); steps; eauto with wf.
+  intros; erewrite reducible_val_fv_2 in *; eauto; steps.
 Qed.
 
-Hint Immediate reducible_val_wf: wf.
+Hint Extern 1 => solve [ exfalso; eapply reducible_val_fv_1; eauto ] : fv.
+Hint Extern 1 => solve [ exfalso; eapply reducible_val_fv_2; eauto ] : fv.
 
-Lemma reducible_val_twf:
-  forall theta t T k,
-    reducible_values theta t T ->
-    valid_interpretation theta ->
-    twf t k.
+Lemma reducible_val_wf_1:
+  forall ρ v1 v2 T k,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    wf v1 k.
 Proof.
-  intros theta t T k H1 H2.
-  pose proof (reducible_values_props theta t T term_var H1 H2); steps;
+  intros ρ v1 v2 T k H1 H2.
+  pose proof (reducible_values_props ρ v1 v2 T term_var H1 H2); steps; eauto with wf.
+Qed.
+
+Lemma reducible_val_wf_2:
+  forall ρ v1 v2 T k,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    wf v2 k.
+Proof.
+  intros ρ v1 v2 T k H1 H2.
+  pose proof (reducible_values_props ρ v1 v2 T term_var H1 H2); steps; eauto with wf.
+Qed.
+
+Hint Immediate reducible_val_wf_1: wf.
+Hint Immediate reducible_val_wf_2: wf.
+
+Lemma reducible_val_twf_1:
+  forall ρ v1 v2 T k,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    twf v1 k.
+Proof.
+  intros ρ v1 v2 T k H1 H2.
+  pose proof (reducible_values_props ρ v1 v2 T term_var H1 H2); steps;
     eauto using is_erased_term_twf.
 Qed.
 
-Hint Immediate reducible_val_twf: twf.
-
-Lemma red_is_val:
-  forall theta v T,
-    reducible_values theta v T ->
-    valid_interpretation theta ->
-    cbv_value v.
+Lemma reducible_val_twf_2:
+  forall ρ v1 v2 T k,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    twf v2 k.
 Proof.
-  intros theta t T H1 H2.
-  pose proof (reducible_values_props theta t T term_var H1 H2); steps.
+  intros ρ v1 v2 T k H1 H2.
+  pose proof (reducible_values_props ρ v1 v2 T term_var H1 H2); steps;
+    eauto using is_erased_term_twf.
 Qed.
 
-Hint Immediate red_is_val: values.
+Hint Immediate reducible_val_twf_1: twf.
+Hint Immediate reducible_val_twf_2: twf.
 
-Lemma red_irred:
-  forall theta v T,
-    valid_interpretation theta ->
-    reducible_values theta v T ->
-    irred v.
+Lemma reducible_val_closed_term_1:
+  forall ρ v1 v2 T,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    closed_term v1.
 Proof.
-  eauto using red_is_val, value_irred.
+  intros ρ v1 v2 T H1 H2.
+  pose proof (reducible_values_props ρ v1 v2 T term_var H1 H2);
+    unfold closed_term; steps.
 Qed.
 
-Lemma reducible_normalizing:
-  forall theta e T,
-    valid_interpretation theta ->
-    reducible theta e T ->
-    scbv_normalizing e.
+Lemma reducible_val_closed_term_2:
+  forall ρ v1 v2 T,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    closed_term v2.
 Proof.
-  unfold reducible, reduces_to, closed_term, scbv_normalizing; destruct T; steps;
-    eauto using red_is_val with fv wf.
+  intros ρ v1 v2 T H1 H2.
+  pose proof (reducible_values_props ρ v1 v2 T term_var H1 H2);
+    unfold closed_term; steps.
 Qed.
 
-Ltac t_red :=
+Hint Immediate reducible_val_closed_term_1: closed.
+Hint Immediate reducible_val_closed_term_2: closed.
+
+Lemma red_is_val_1:
+  forall ρ v1 v2 T,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    cbv_value v1.
+Proof.
+  intros ρ v1 v2 T H1 H2.
+  pose proof (reducible_values_props ρ v1 v2 T term_var H1 H2); steps.
+Qed.
+
+Lemma red_is_val_2:
+  forall ρ v1 v2 T,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    cbv_value v2.
+Proof.
+  intros ρ v1 v2 T H1 H2.
+  pose proof (reducible_values_props ρ v1 v2 T term_var H1 H2); steps.
+Qed.
+
+Hint Immediate red_is_val_1: values.
+Hint Immediate red_is_val_2: values.
+
+Lemma reducible_val_closed_value_1:
+  forall ρ v1 v2 T,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    closed_value v1.
+Proof.
+  unfold closed_value; steps; eauto with closed values.
+Qed.
+
+Lemma reducible_val_closed_value_2:
+  forall ρ v1 v2 T,
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    valid_interpretation ρ ->
+    closed_value v2.
+Proof.
+  unfold closed_value; steps; eauto with closed values.
+Qed.
+
+Hint Immediate reducible_val_closed_value_1: closed.
+Hint Immediate reducible_val_closed_value_2: closed.
+
+Ltac values_info :=
   match goal with
-         | _ => deterministic_step || step
-         | _ => progress (simp reducible in *)
-         | H1: scbv_step ?t1 _,
-           H2: star scbv_step ?t1 _ |- _ => inversion H2; clear H2
-         | _ => progress (autounfold with props in *)
-         | _ => progress (autorewrite with bsize in *)
-         | _ => progress (autorewrite with bsem in *)
-         end.
-
-Ltac t_reduction :=
-  repeat
-    t_red ||
-    unshelve eauto 3 with smallstep;
-      try omega;
-      eauto 2 with wf;
-      eauto 2 with fv.
-
-Ltac t_values_info2 :=
-  match goal with
-  | H1: valid_interpretation ?theta, H2: reducible_values ?theta ?t ?T  |- _ =>
-    poseNew (Mark t "redvalval");
-    pose proof (red_is_val _ _ _ H2 H1)
+  | H1: valid_interpretation ?ρ, H2: reducible_values ?ρ ?v1 ?v2 ?T  |- _ =>
+    poseNew (Mark (v1, v2) "");
+    pose proof (red_is_val_1 _ _ _ _ H2 H1);
+    pose proof (red_is_val_2 _ _ _ _ H2 H1)
   end.
 
-Lemma smallstep_reducible_aux:
-  forall n theta t T,
+Lemma smallstep_reducible_aux_1:
+  forall n ρ t1 t2 T,
     type_nodes T < n ->
-    valid_interpretation theta ->
-    reducible theta t T ->
-    forall t',
-      scbv_step t t' ->
-      reducible theta t' T.
+    valid_interpretation ρ ->
+    [ ρ ⊨ t1 ≡ t2 : T ] ->
+    forall t1',
+      scbv_step t1 t1' ->
+      [ ρ ⊨ t1' ≡ t2 : T ].
 Proof.
-  unfold reducible; unfold reduces_to, closed_term;
-    steps;
-    eauto 2 with wf;
-    eauto 2 with fv;
-    eauto with erased.
+  unfold reduces_to; steps;
+    eauto using closed_term_scbv_step.
 
-  repeat match goal with
-         | H: star scbv_step _ ?t |- _ => exists t
-         | H1: star scbv_step ?t _, H2: scbv_step ?t _ |- _ =>
-            poseNew (Mark 0 "inversion");
-            inversion H1
-         | H1: reducible_values _ ?v _,
-           H2: scbv_step ?v ?t |- _ =>
-              apply False_ind; apply evaluate_step with v t; eauto 4 with values
-         | _ => step || deterministic_step
-         end;
-    eauto using red_is_val.
+  eexists; eexists; steps; try eassumption;
+    eauto using red_is_val_1, star_one_step_val.
 Qed.
 
-Lemma smallstep_reducible:
-  forall theta t t' T,
-    valid_interpretation theta ->
-    scbv_step t t' ->
-    reducible theta t T ->
-    reducible theta t' T.
+Lemma smallstep_reducible_1:
+  forall ρ t1 t1' t2 T,
+    valid_interpretation ρ ->
+    scbv_step t1 t1' ->
+    [ ρ ⊨ t1 ≡ t2 : T ] ->
+    [ ρ ⊨ t1' ≡ t2 : T ].
 Proof.
-  eauto using smallstep_reducible_aux.
+  eauto using smallstep_reducible_aux_1.
+Qed.
+
+Lemma smallstep_reducible_aux_2:
+  forall n ρ t1 t2 T,
+    type_nodes T < n ->
+    valid_interpretation ρ ->
+    [ ρ ⊨ t1 ≡ t2 : T ] ->
+    forall t2',
+      scbv_step t2 t2' ->
+      [ ρ ⊨ t1 ≡ t2' : T ].
+Proof.
+  unfold reduces_to; steps;
+    eauto using closed_term_scbv_step.
+
+  eexists; eexists; steps; try eassumption;
+    eauto using red_is_val_2, star_one_step_val.
+Qed.
+
+Lemma smallstep_reducible_2:
+  forall ρ t1 t2 t2' T,
+    valid_interpretation ρ ->
+    scbv_step t2 t2' ->
+    [ ρ ⊨ t1 ≡ t2 : T ] ->
+    [ ρ ⊨ t1 ≡ t2' : T ].
+Proof.
+  eauto using smallstep_reducible_aux_2.
+Qed.
+
+Lemma star_smallstep_reducible_1:
+  forall t1 t1',
+    star scbv_step t1 t1' ->
+    forall ρ t2 T,
+      valid_interpretation ρ ->
+      [ ρ ⊨ t1 ≡ t2 : T ] ->
+      [ ρ ⊨ t1' ≡ t2 : T ].
+Proof.
+  induction 1; steps; eauto using smallstep_reducible_1.
+Qed.
+
+Lemma star_smallstep_reducible_2:
+  forall t2 t2',
+    star scbv_step t2 t2' ->
+    forall ρ t1 T,
+      valid_interpretation ρ ->
+      [ ρ ⊨ t1 ≡ t2 : T ] ->
+      [ ρ ⊨ t1 ≡ t2' : T ].
+Proof.
+  induction 1; steps; eauto using smallstep_reducible_2.
 Qed.
 
 Lemma star_smallstep_reducible:
-  forall t t',
-    star scbv_step t t' ->
-    forall theta T,
-      valid_interpretation theta ->
-      reducible theta t T ->
-      reducible theta t' T.
+  forall t1 t2 t1' t2',
+    star scbv_step t1 t1' ->
+    star scbv_step t2 t2' ->
+    forall ρ T,
+      valid_interpretation ρ ->
+      [ ρ ⊨ t1 ≡ t2 : T ] ->
+      [ ρ ⊨ t1' ≡ t2' : T ].
 Proof.
-  induction 1; steps; eauto using smallstep_reducible.
+  eauto using star_smallstep_reducible_1, star_smallstep_reducible_2.
 Qed.
 
-Lemma backstep_reducible_aux:
-  forall n theta t' T,
+Lemma backstep_reducible_aux_1:
+  forall n ρ t1' t2 T,
     type_nodes T < n ->
-    valid_interpretation theta ->
-    reducible theta t' T ->
-    forall t,
-      pfv t term_var = nil ->
-      wf t 0 ->
-      is_erased_term t ->
-      scbv_step t t' ->
-      reducible theta t T.
+    valid_interpretation ρ ->
+    [ ρ ⊨ t1' ≡ t2 : T ] ->
+    forall t1,
+      closed_term t1 ->
+      scbv_step t1 t1' ->
+      [ ρ ⊨ t1 ≡ t2 : T ].
 Proof.
-  unfold reducible; unfold reduces_to, closed_term; steps; eauto with star.
+  unfold reduces_to; steps; eauto 6 with star.
+Qed.
+
+Lemma backstep_reducible_1:
+  forall ρ t1 t1' t2 T,
+    valid_interpretation ρ ->
+    scbv_step t1 t1' ->
+    closed_term t1 ->
+    [ ρ ⊨ t1' ≡ t2 : T ] ->
+    [ ρ ⊨ t1 ≡ t2 : T ].
+Proof.
+  eauto using backstep_reducible_aux_1.
+Qed.
+
+Lemma star_backstep_reducible_1:
+  forall t1 t1' t2 T ρ,
+    star scbv_step t1 t1' ->
+    valid_interpretation ρ ->
+    closed_term t1 ->
+    [ ρ ⊨ t1' ≡ t2 : T ] ->
+    [ ρ ⊨ t1 ≡ t2 : T ].
+Proof.
+  induction 1; steps; eauto using closed_term_scbv_step, backstep_reducible_1.
+Qed.
+
+Lemma backstep_reducible_aux_2:
+  forall n ρ t1 t2' T,
+    type_nodes T < n ->
+    valid_interpretation ρ ->
+    [ ρ ⊨ t1 ≡ t2' : T ] ->
+    forall t2,
+      closed_term t2 ->
+      scbv_step t2 t2' ->
+      [ ρ ⊨ t1 ≡ t2 : T ].
+Proof.
+  unfold reduces_to; steps; eauto 6 with star.
+Qed.
+
+Lemma backstep_reducible_2:
+  forall ρ t1 t2 t2' T,
+    valid_interpretation ρ ->
+    scbv_step t2 t2' ->
+    closed_term t2 ->
+    [ ρ ⊨ t1 ≡ t2' : T ] ->
+    [ ρ ⊨ t1 ≡ t2 : T ].
+Proof.
+  eauto using backstep_reducible_aux_2.
+Qed.
+
+Lemma star_backstep_reducible_2:
+  forall t1 t2 t2' T ρ,
+    star scbv_step t2 t2' ->
+    valid_interpretation ρ ->
+    closed_term t2 ->
+    [ ρ ⊨ t1 ≡ t2' : T ] ->
+    [ ρ ⊨ t1 ≡ t2 : T ].
+Proof.
+  induction 1; steps; eauto using closed_term_scbv_step, backstep_reducible_2.
 Qed.
 
 Lemma backstep_reducible:
-  forall theta t t' T,
-    valid_interpretation theta ->
-    scbv_step t t' ->
-    pfv t term_var = nil ->
-    wf t 0 ->
-    is_erased_term t ->
-    reducible theta t' T ->
-    reducible theta t T.
+  forall ρ t1 t1' t2 t2' T,
+    valid_interpretation ρ ->
+    scbv_step t1 t1' ->
+    scbv_step t2 t2' ->
+    closed_term t1 ->
+    closed_term t2 ->
+    [ ρ ⊨ t1' ≡ t2' : T ] ->
+    [ ρ ⊨ t1 ≡ t2 : T ].
 Proof.
-  eauto using backstep_reducible_aux.
+  eauto using backstep_reducible_1, backstep_reducible_2.
 Qed.
 
 Lemma star_backstep_reducible:
-  forall t t' theta,
-    star scbv_step t t' ->
-    valid_interpretation theta ->
-    pfv t term_var = nil ->
-    wf t 0 ->
-    is_erased_term t ->
-    forall T,
-      reducible theta t' T ->
-      reducible theta t T.
+  forall t1 t1' t2 t2' T ρ,
+    star scbv_step t1 t1' ->
+    star scbv_step t2 t2' ->
+    valid_interpretation ρ ->
+    closed_term t1 ->
+    closed_term t2 ->
+    [ ρ ⊨ t1' ≡ t2' : T ] ->
+    [ ρ ⊨ t1 ≡ t2 : T ].
 Proof.
-  induction 1; steps; eauto 7 using backstep_reducible with fv wf erased.
+  eauto using star_backstep_reducible_1, star_backstep_reducible_2.
 Qed.
 
 Lemma reducible_values_exprs:
-  forall theta t T T',
-    valid_interpretation theta ->
-    (forall t, reducible_values theta t T -> reducible_values theta t T') ->
-    reducible theta t T ->
-    reducible theta t T'.
+  forall ρ v1 v2 T T',
+    (forall v1 v2, ([ ρ ⊨ v1 ≡ v2 : T ]v -> [ ρ ⊨ v1 ≡ v2 : T' ]v)) ->
+    [ ρ ⊨ v1 ≡ v2 : T ] ->
+    [ ρ ⊨ v1 ≡ v2 : T' ].
 Proof.
-  unfold reducible, reduces_to; steps; eauto.
+  unfold reduces_to; steps; eauto 6.
 Qed.
-
-Ltac use_red_ind :=
-  match goal with
-  | H1: forall T v t t', _,
-    H2: scbv_step ?t1 ?t2 |- reducible_values ?v (open 0 ?T ?t1) =>
-      unshelve epose proof (H1 T v t1 t2  _ _ _)
-  | H1: forall T v t t', _,
-    H2: scbv_step ?t1 ?t2 |- reducible_values ?v (open 0 ?T ?t2) =>
-      unshelve epose proof (H1 T v t1 t2  _ _ _)
-  end.
-
-Ltac guess_red :=
-  match goal with
-  | H: star scbv_step ?t1 ?t2 |- exists t, star scbv_step ?t1 t /\ _ =>
-    exists t2
-  end.
 
 Fixpoint are_values (l: list (nat * tree)) :=
   match l with
@@ -310,74 +469,99 @@ Fixpoint are_values (l: list (nat * tree)) :=
   | (x,v) :: l' => cbv_value v /\ are_values l'
   end.
 
-Lemma reducible_values_list:
-  forall theta l gamma,
-    valid_interpretation theta ->
-    satisfies (reducible_values theta) gamma l ->
-    are_values l.
+Lemma reducible_values_list_1:
+  forall ρ l1 l2 Γ,
+    valid_interpretation ρ ->
+    satisfies (reducible_values ρ) Γ l1 l2 ->
+    are_values l1.
 Proof.
-  induction l; repeat step || step_inversion satisfies; eauto using red_is_val.
+  induction l1; repeat step || step_inversion satisfies; eauto using red_is_val_1.
 Qed.
 
-Hint Immediate reducible_values_list: values.
+Hint Immediate reducible_values_list_1: values.
+
+Lemma reducible_values_list_2:
+  forall ρ l1 l2 Γ,
+    valid_interpretation ρ ->
+    satisfies (reducible_values ρ) Γ l1 l2 ->
+    are_values l2.
+Proof.
+  induction l1; repeat step || step_inversion satisfies; eauto using red_is_val_2.
+Qed.
+
+Hint Immediate reducible_values_list_2: values.
 
 Lemma reducible_expr_value:
-  forall theta v T,
-    cbv_value v ->
-    reducible theta v T ->
-    reducible_values theta v T.
+  forall ρ v1 v2 T,
+    cbv_value v1 ->
+    cbv_value v2 ->
+    [ ρ ⊨ v1 ≡ v2 : T ] ->
+    [ ρ ⊨ v1 ≡ v2 : T ]v.
 Proof.
-  unfold reducible, reduces_to; repeat step || t_invert_star.
+  unfold reduces_to; repeat step || t_invert_star.
 Qed.
 
-Lemma reducible_wf:
-  forall theta t T k,
-    reducible theta t T -> wf t k.
+Lemma reducible_wf_1:
+  forall ρ t1 t2 T k,
+    [ ρ ⊨ t1 ≡ t2 : T ] -> wf t1 k.
 Proof.
-  unfold reducible, reduces_to, closed_term; steps; eauto with wf.
+  unfold reduces_to, closed_term; steps; eauto with wf.
 Qed.
 
-Hint Immediate reducible_wf: wf.
+Hint Immediate reducible_wf_1: wf.
 
-Lemma reducible_twf:
-  forall theta t T k,
-    reducible theta t T -> twf t k.
+Lemma reducible_wf_2:
+  forall ρ t1 t2 T k,
+    [ ρ ⊨ t1 ≡ t2 : T ] -> wf t2 k.
 Proof.
-  unfold reducible, reduces_to, closed_term; steps; eauto using is_erased_term_twf.
+  unfold reduces_to, closed_term; steps; eauto with wf.
 Qed.
 
-Hint Immediate reducible_twf: twf.
+Hint Immediate reducible_wf_2: wf.
 
-Lemma reducible_fv:
-  forall theta t T tag, reducible theta t T -> pfv t tag = nil.
+Lemma reducible_twf_1:
+  forall ρ t1 t2 T k,
+    [ ρ ⊨ t1 ≡ t2 : T ] -> twf t1 k.
 Proof.
-  destruct tag; unfold reducible, reduces_to, closed_term; steps; eauto using is_erased_term_tfv.
+  unfold reduces_to, closed_term; steps; eauto using is_erased_term_twf.
 Qed.
 
-Hint Immediate reducible_fv: fv.
+Hint Immediate reducible_twf_1: twf.
+
+Lemma reducible_twf_2:
+  forall ρ t1 t2 T k,
+    [ ρ ⊨ t1 ≡ t2 : T ] -> twf t1 k.
+Proof.
+  unfold reduces_to, closed_term; steps; eauto using is_erased_term_twf.
+Qed.
+
+Hint Immediate reducible_twf_2: twf.
+
+Lemma reducible_fv_1:
+  forall ρ t1 t2 T tag, [ ρ ⊨ t1 ≡ t2 : T ] -> pfv t1 tag = nil.
+Proof.
+  destruct tag; unfold reduces_to, closed_term; steps; eauto using is_erased_term_tfv.
+Qed.
+
+Hint Immediate reducible_fv_1: fv.
+
+Lemma reducible_fv_2:
+  forall ρ t1 t2 T tag, [ ρ ⊨ t1 ≡ t2 : T ] -> pfv t2 tag = nil.
+Proof.
+  destruct tag; unfold reduces_to, closed_term; steps; eauto using is_erased_term_tfv.
+Qed.
+
+Hint Immediate reducible_fv_2: fv.
 
 Lemma reducible_value_expr:
-  forall theta t T,
-    valid_interpretation theta ->
-    reducible_values theta t T ->
-    reducible theta t T.
+  forall ρ v1 v2 T,
+    valid_interpretation ρ ->
+    [ ρ ⊨ v1 ≡ v2 : T ]v ->
+    [ ρ ⊨ v1 ≡ v2 : T ].
 Proof.
-  unfold reducible, reduces_to, closed_term; steps;
+  unfold reduces_to, closed_term; steps;
     eauto with wf;
     eauto with fv;
     eauto with star;
     eauto with erased.
-Qed.
-
-Lemma reduces_to_value:
-  forall theta T t v,
-    reduces_to (fun v => reducible_values theta v T) t ->
-    valid_interpretation theta ->
-    cbv_value v ->
-    star scbv_step t v ->
-    reducible_values theta v T.
-Proof.
-  unfold reduces_to;
-    repeat step || t_deterministic_star;
-    eauto using red_is_val.
 Qed.

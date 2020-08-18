@@ -380,15 +380,6 @@ Ltac deterministic_step :=
 
 Hint Extern 1 => deterministic_step: smallstep.
 
-Definition closed_term t :=
-  pfv t term_var = nil /\
-  wf t 0 /\
-  is_erased_term t.
-
-Definition closed_value v :=
-  closed_term v /\
-  cbv_value v.
-
 Lemma cbv_value_open:
   forall v k rep,
     cbv_value v ->

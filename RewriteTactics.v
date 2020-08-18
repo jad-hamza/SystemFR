@@ -2,7 +2,7 @@ Require Export SystemFR.Freshness.
 Require Export SystemFR.FVLemmasLists.
 Require Export SystemFR.WFLemmasLists.
 Require Export SystemFR.SubstitutionLemmas.
-Require Export SystemFR.ErasedTermLemmas.
+Require Export SystemFR.ClosedTerm.
 
 Ltac t_rewrite :=
   repeat step || list_utils || fv_open || finisher;

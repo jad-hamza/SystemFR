@@ -1,18 +1,6 @@
 Require Export SystemFR.TypeErasureLemmas.
-Require Export SystemFR.ReducibilityDefinition.
+Require Export SystemFR.OpenReducibilityDefinition.
 Require Export SystemFR.AnnotatedTermLemmas.
-
-Lemma open_reducible_same:
-  forall tvars gamma t T tvars' gamma' t' T',
-    open_reducible tvars gamma t T ->
-    tvars = tvars' ->
-    gamma = gamma' ->
-    t = t' ->
-    T = T' ->
-    open_reducible tvars' gamma' t' T'.
-Proof.
-  steps.
-Qed.
 
 Ltac erase_open := repeat
   (progress rewrite erase_type_open in * by (steps; eauto with annot)) ||

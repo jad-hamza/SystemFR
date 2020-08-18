@@ -42,7 +42,7 @@ Lemma tlt_zero_b:
     1 <= tree_size b.
 Proof.
   destruct 1; repeat step;
-    eauto with omega;
+    eauto with lia;
     try solve [ inversion H; unfold tlt in *;
       repeat step || t_invert_step || star_smallstep_app_onestep || t_invert_star
     ].

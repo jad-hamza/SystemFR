@@ -350,7 +350,7 @@ Lemma term_lift_inter_reducible_open:
 Proof.
   induction 1;
     repeat step || top_level_unfold inter_reducible ||
-           (rewrite open_none in * by eauto 2 with wf omega);
+           (rewrite open_none in * by eauto 2 with wf lia);
     try solve [ constructor; unfold inter_reducible; steps ].
 Qed.
 

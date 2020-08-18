@@ -1,7 +1,6 @@
 Require Export SystemFR.SubstitutionLemmas.
 Require Export SystemFR.PrimitiveSize.
 Require Export SystemFR.PrimitiveRecognizers.
-Require Export SystemFR.SmallStep.
 Require Export SystemFR.RelationClosures.
 
 Lemma is_erased_term_twf:
@@ -13,17 +12,6 @@ Proof.
 Qed.
 
 Hint Immediate is_erased_term_twf: twf.
-
-Lemma twf_open2:
-  forall T k i v,
-    twf T k ->
-    closed_value v ->
-    twf (open i T v) k.
-Proof.
-  unfold closed_value, closed_term; intros; apply twf_open; steps; eauto with twf.
-Qed.
-
-Hint Immediate twf_open2: twf.
 
 Lemma is_erased_open:
   forall t k rep,
@@ -46,17 +34,6 @@ Proof.
 Qed.
 
 Hint Resolve is_erased_type_open: erased.
-
-Lemma is_erased_type_open2:
-  forall T i v,
-    is_erased_type T ->
-    closed_value v ->
-    is_erased_type (open i T v).
-Proof.
-  unfold closed_value, closed_term; intros; apply is_erased_type_open; steps.
-Qed.
-
-Hint Immediate is_erased_type_open2: erased.
 
 Lemma is_erased_type_topen:
   forall t k rep,

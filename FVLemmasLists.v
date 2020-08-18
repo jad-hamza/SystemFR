@@ -5,17 +5,31 @@ Require Export SystemFR.FVLemmas.
 Require Export SystemFR.TypeErasureLemmas.
 Require Export SystemFR.TermList.
 
-Lemma satisfies_closed_mapping:
-  forall P lterms gamma tag,
-    satisfies P gamma lterms ->
-    pclosed_mapping lterms tag.
+
+
+Lemma satisfies_closed_mapping_1:
+  forall R l1 l2 Γ tag,
+    satisfies R Γ l1 l2 ->
+    pclosed_mapping l1 tag.
 Proof.
-  induction lterms; destruct tag;
+  induction l1; destruct tag;
     repeat step || step_inversion satisfies ||
            unfold closed_term in *; eauto.
 Qed.
 
-Hint Extern 50 => solve [ eapply satisfies_closed_mapping; eassumption ]: fv.
+Hint Extern 50 => solve [ eapply satisfies_closed_mapping_1; eassumption ]: fv.
+
+Lemma satisfies_closed_mapping_2:
+  forall R l1 l2 Γ tag,
+    satisfies R Γ l1 l2 ->
+    pclosed_mapping l2 tag.
+Proof.
+  induction l1; destruct tag;
+    repeat step || step_inversion satisfies ||
+           unfold closed_term in *; eauto.
+Qed.
+
+Hint Extern 50 => solve [ eapply satisfies_closed_mapping_2; eassumption ]: fv.
 
 Lemma closed_mapping_append1:
   forall l1 l2 tag,
@@ -47,57 +61,103 @@ Qed.
 
 Hint Extern 50 => eapply closed_mapping_append: b_cmap.
 
-Lemma satisfies_fv_nil:
-  forall P gamma lterms,
-    satisfies P gamma lterms ->
-    forall t,
-      t ∈ range lterms ->
-      fv t = nil.
+Lemma satisfies_fv_nil_1:
+  forall R Γ l1 l2,
+    satisfies R Γ l1 l2 ->
+    forall t, t ∈ range l1 -> fv t = nil.
 Proof.
   steps.
   eapply closed_mapping_range; eauto.
-  eapply satisfies_closed_mapping; eauto.
+  eapply satisfies_closed_mapping_1; eauto.
 Qed.
 
-Hint Extern 50 => eapply satisfies_fv_nil: fv.
+Hint Extern 50 => eapply satisfies_fv_nil_1: fv.
 
-Lemma fv_satisfies_nil:
-  forall P gamma lterms t,
-    satisfies P gamma lterms ->
-    subset (fv t) (support gamma) ->
-    fv (substitute t lterms) = nil.
+Lemma satisfies_fv_nil_2:
+  forall R Γ l1 l2,
+    satisfies R Γ l1 l2 ->
+    forall t, t ∈ range l2 -> fv t = nil.
+Proof.
+  steps.
+  eapply closed_mapping_range; eauto.
+  eapply satisfies_closed_mapping_2; eauto.
+Qed.
+
+Hint Extern 50 => eapply satisfies_fv_nil_2: fv.
+
+Lemma fv_satisfies_nil_1:
+  forall R Γ l1 l2 t,
+    satisfies R Γ l1 l2 ->
+    subset (fv t) (support Γ) ->
+    fv (substitute t l1) = nil.
 Proof.
   repeat step || t_termlist || list_utils || apply fv_nils2 || rewrite_any;
     eauto with fv b_cmap.
 Qed.
 
-Hint Extern 50 => eapply fv_satisfies_nil: fv.
+Lemma fv_satisfies_nil_2:
+  forall R Γ l1 l2 t,
+    satisfies R Γ l1 l2 ->
+    subset (fv t) (support Γ) ->
+    fv (substitute t l1) = nil.
+Proof.
+  repeat step || t_termlist || list_utils || apply fv_nils2 || rewrite_any;
+    eauto with fv b_cmap.
+Qed.
 
-Lemma subset_same_support:
-  forall P gamma lterms S,
-    satisfies P gamma lterms ->
-    subset S (support gamma) ->
-    subset S (support lterms).
+Hint Extern 50 => eapply fv_satisfies_nil_2: fv.
+
+Lemma subset_same_support_1:
+  forall R Γ l1 l2 S,
+    satisfies R Γ l1 l2 ->
+    subset S (support Γ) ->
+    subset S (support l1).
 Proof.
   repeat step || t_termlist || rewrite_any.
 Qed.
 
-Hint Immediate subset_same_support: fv.
+Hint Immediate subset_same_support_1: fv.
 
-Lemma fv_nils3:
-  forall P gamma t l,
+Lemma subset_same_support_2:
+  forall R Γ l1 l2 S,
+    satisfies R Γ l1 l2 ->
+    subset S (support Γ) ->
+    subset S (support l2).
+Proof.
+  repeat step || t_termlist || rewrite_any.
+Qed.
+
+Hint Immediate subset_same_support_2: fv.
+
+Lemma fv_nils3_1:
+  forall R Γ t l1 l2,
     is_annotated_term t ->
-    subset (pfv t term_var) (support gamma) ->
-    satisfies P (erase_context gamma) l ->
-    pfv (psubstitute (erase_term t) l term_var) term_var = nil.
+    subset (pfv t term_var) (support Γ) ->
+    satisfies R (erase_context Γ) l1 l2 ->
+    pfv (psubstitute (erase_term t) l1 term_var) term_var = nil.
 Proof.
   intros.
   apply fv_nils2; eauto with fv.
-  eapply subset_same_support; eauto;
+  eapply subset_same_support_1; eauto;
     repeat step || t_subset_erase || rewrite erased_context_support.
 Qed.
 
-Hint Immediate fv_nils3: fv.
+Hint Immediate fv_nils3_1: fv.
+
+Lemma fv_nils3_2:
+  forall R Γ t l1 l2,
+    is_annotated_term t ->
+    subset (pfv t term_var) (support Γ) ->
+    satisfies R (erase_context Γ) l1 l2 ->
+    pfv (psubstitute (erase_term t) l2 term_var) term_var = nil.
+Proof.
+  intros.
+  apply fv_nils2; eauto with fv.
+  eapply subset_same_support_2; eauto;
+    repeat step || t_subset_erase || rewrite erased_context_support.
+Qed.
+
+Hint Immediate fv_nils3_2: fv.
 
 Lemma fv_subst_different_tag:
   forall t l tag tag',

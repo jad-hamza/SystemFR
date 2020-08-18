@@ -1,8 +1,5 @@
 Require Import Equations.Equations.
 Require Import Equations.Prop.Subterm.
-
-Require Import Omega.
-
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
 
@@ -15,7 +12,7 @@ Opaque reducible_values.
 Opaque strictly_positive.
 
 Lemma strictly_positive_pull_forall:
-  forall T theta A B v X,
+  forall T ρ A B v X,
     ~(X ∈ pfv T type_var) ->
     twf A 0 ->
     twf B 0 ->
@@ -29,12 +26,12 @@ Lemma strictly_positive_pull_forall:
     pfv A term_var = nil ->
     pfv B term_var = nil ->
     pfv T term_var = nil ->
-    valid_interpretation theta ->
+    valid_interpretation ρ ->
     strictly_positive (topen 0 T (fvar X type_var)) (X :: nil) ->
-    reducible_values theta v (topen 0 T (T_forall A B)) ->
+    reducible_values ρ v (topen 0 T (T_forall A B)) ->
     forall a,
-      reducible_values theta a A ->
-      reducible_values theta v (topen 0 T (open 0 B a)).
+      reducible_values ρ a A ->
+      reducible_values ρ v (topen 0 T (open 0 B a)).
 Proof.
   steps.
   apply reducible_values_subst_head with
@@ -54,9 +51,9 @@ Proof.
 
   rewrite cons_app.
   lazymatch goal with
-  | H: wf ?B 1 |- reducible_values (((?X,?RC) :: nil) ++ ?theta) ?v ?T =>
+  | H: wf ?B 1 |- reducible_values (((?X,?RC) :: nil) ++ ?ρ) ?v ?T =>
     eapply strictly_positive_push_forall with
-      ((X, fun a2 v => reducible_values theta v (T_forall A B)) :: nil) A
+      ((X, fun a2 v => reducible_values ρ v (T_forall A B)) :: nil) A
   end;
     repeat step || apply wf_topen || apply twf_topen || unfold non_empty ||
            apply is_erased_type_topen || list_utils || simp_red ||

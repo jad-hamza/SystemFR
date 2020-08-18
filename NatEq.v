@@ -28,7 +28,7 @@ Proof.
   unfold nat_eq, nat_eq_fix.
   destruct 1;
     repeat step || t_invert_star || star_smallstep_app_onestep;
-    eauto with omega;
+    eauto with lia;
     eauto with values.
 Qed.
 

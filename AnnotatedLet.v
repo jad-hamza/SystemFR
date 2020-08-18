@@ -3,9 +3,9 @@ Require Export SystemFR.AnnotatedTactics.
 Require Export SystemFR.ErasedLet.
 
 Lemma annotated_reducible_let:
-  forall tvars gamma t1 t2 x p A B,
-    ~(x ∈ fv_context gamma) ->
-    ~(p ∈ fv_context gamma) ->
+  forall Θ Γ t1 t2 x p A B,
+    ~(x ∈ fv_context Γ) ->
+    ~(p ∈ fv_context Γ) ->
     ~(x = p) ->
     ~(x ∈ fv t2) ->
     ~(p ∈ fv t2) ->
@@ -13,8 +13,8 @@ Lemma annotated_reducible_let:
     ~(p ∈ fv B) ->
     ~(x ∈ fv A) ->
     ~(p ∈ fv A) ->
-    ~(x ∈ tvars) ->
-    ~(p ∈ tvars) ->
+    ~(x ∈ Θ) ->
+    ~(p ∈ Θ) ->
     ~(x ∈ fv t1) ->
     ~(p ∈ fv t1) ->
     wf B 1 ->
@@ -22,12 +22,12 @@ Lemma annotated_reducible_let:
     is_annotated_type B ->
     is_annotated_term t1 ->
     is_annotated_term t2 ->
-    subset (fv t2) (support gamma) ->
-    subset (fv A) (support gamma) ->
-    subset (fv B) (support gamma) ->
-    [[ tvars; gamma ⊨ t1 : A ]] ->
-    [[ tvars; (p,T_equiv (fvar x term_var) t1) :: (x,A) :: gamma ⊨ open 0 t2 (fvar x term_var) : open 0 B (fvar x term_var) ]] ->
-    [[ tvars; gamma ⊨ tlet t1 A t2 : open 0 B t1 ]].
+    subset (fv t2) (support Γ) ->
+    subset (fv A) (support Γ) ->
+    subset (fv B) (support Γ) ->
+    [[ Θ; Γ ⊨ t1 : A ]] ->
+    [[ Θ; (p,T_equiv (fvar x term_var) t1) :: (x,A) :: Γ ⊨ open 0 t2 (fvar x term_var) : open 0 B (fvar x term_var) ]] ->
+    [[ Θ; Γ ⊨ tlet t1 A t2 : open 0 B t1 ]].
 Proof.
   unfold annotated_reducible;
     repeat step || erase_open.

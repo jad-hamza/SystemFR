@@ -1,15 +1,13 @@
-Require Export SystemFR.Syntax.
+Require Import Relations.
 
-Require Export SystemFR.Tactics.
-Require Export SystemFR.ListSetLemmas.
-Require Export SystemFR.AssocList.
-Require Export SystemFR.ListUtils.
 Require Export SystemFR.EqualWithRelation.
 Require Export SystemFR.EquivalentWithRelation.
 
 Require Import PeanoNat.
 
 Open Scope list_scope.
+
+Arguments same_relation { A }.
 
 Fixpoint idrel (l: list nat) :=
   match l with
@@ -80,17 +78,11 @@ Proof.
   induction l; steps.
 Qed.
 
-Lemma equivalent_rc_refl:
-  forall rc, equivalent_rc rc rc.
-Proof.
-  unfold equivalent_rc; steps.
-Qed.
-
 Lemma equivalent_with_idrel:
-  forall T (l: list nat) (x: nat) theta t (equiv: T -> T -> Prop),
+  forall T (l: list nat) (x: nat) ρ t (equiv: T -> T -> Prop),
     (x ∈ l -> False) ->
     (forall v, equiv v v) ->
-    equivalent_with_relation (idrel l) theta ((x,t) :: theta) equiv.
+    equivalent_with_relation (idrel l) ρ ((x,t) :: ρ) equiv.
 Proof.
   unfold equivalent_with_relation;
     repeat step || t_lookup ||
@@ -104,10 +96,10 @@ Proof.
 Qed.
 
 Lemma equivalent_with_idrel2:
-  forall T (l: list nat) (x: nat) theta t (equiv: T -> T -> Prop),
+  forall T (l: list nat) (x: nat) ρ t (equiv: T -> T -> Prop),
     (x ∈ l -> False) ->
     (forall v, equiv v v) ->
-    equivalent_with_relation (idrel l) ((x,t) :: theta) theta equiv.
+    equivalent_with_relation (idrel l) ((x,t) :: ρ) ρ equiv.
 Proof.
   unfold equivalent_with_relation;
     repeat step || t_lookup ||
@@ -129,20 +121,20 @@ Ltac t_idrel :=
   (rewrite idrel_lookup_swap_fail in * by auto).
 
 Lemma equivalent_with_relation_permute:
-  forall T theta1 theta2 v M l (equiv: T -> T -> Prop),
-    ~(M ∈ support theta1) ->
+  forall T ρ1 ρ2 v M l (equiv: T -> T -> Prop),
+    ~(M ∈ support ρ1) ->
     (forall v, equiv v v) ->
     equivalent_with_relation
       ((M, M) :: idrel l)
-      (theta1 ++ (M, v) :: theta2)
-      ((M, v) :: theta1 ++ theta2)
+      (ρ1 ++ (M, v) :: ρ2)
+      ((M, v) :: ρ1 ++ ρ2)
       equiv
 .
 Proof.
   unfold equivalent_with_relation, equivalent_with;
     repeat match goal with
            | |- exists r, Some ?R = Some r /\ _ => exists R
-           | |- exists r, _ /\ equivalent_rc r ?R => exists R
+           | |- exists r, _ /\ same_relation r ?R => exists R
            | H: _ |- _ => rewrite lookup_remove2 in H by steps
            | _ => rewrite lookup_remove2 by steps
            | _ => step || t_lookup_rewrite || t_idrel || t_lookup || list_utils ||
@@ -170,20 +162,20 @@ Proof.
 Qed.
 
 Lemma equivalent_with_relation_permute2:
-  forall T theta1 theta2 v X Y l (equiv: T -> T -> Prop),
-    ~(X ∈ support theta1) ->
+  forall T ρ1 ρ2 v X Y l (equiv: T -> T -> Prop),
+    ~(X ∈ support ρ1) ->
     (forall v, equiv v v) ->
     equivalent_with_relation
       ((Y, X) :: idrel l)
-      ((Y, v) :: theta1 ++ theta2)
-      (theta1 ++ (X, v) :: theta2)
+      ((Y, v) :: ρ1 ++ ρ2)
+      (ρ1 ++ (X, v) :: ρ2)
       equiv
 .
 Proof.
   unfold equivalent_with_relation, equivalent_with;
     repeat match goal with
            | |- exists r, Some ?R = Some r /\ _ => exists R
-           | |- exists r, _ /\ equivalent_rc r ?R => exists R
+           | |- exists r, _ /\ same_relation r ?R => exists R
            | H: _ |- _ => rewrite lookup_remove2 in H by steps
            | _ => rewrite lookup_remove2 by steps
            | _ => step || t_lookup_rewrite || t_idrel || t_lookup || list_utils ||

@@ -1,11 +1,10 @@
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
-Require Import Omega.
 Require Import Psatz.
+Require Import Coq.Arith.PeanoNat.
 
 Open Scope string.
 
-Hint Extern 50 => omega: omega.
 Hint Extern 50 => lia: lia.
 Hint Extern 50 => cbn: cbn.
 Hint Extern 50 => cbn; intuition auto: cbn_intuition.
@@ -18,6 +17,16 @@ Ltac destruct_and :=
 Ltac destruct_or :=
   match goal with
   | H: _ \/ _ |- _ => destruct H
+  end.
+
+Ltac destruct_match :=
+  match goal with
+  | [ |- context[match ?t with _ => _ end]] =>
+      let matched := fresh "matched" in
+      destruct t eqn:matched
+  | [ H: context[match ?t with _ => _ end] |- _ ] =>
+      let matched := fresh "matched" in
+      destruct t eqn:matched
   end.
 
 Ltac success t := (t; fail) || (t; []).
@@ -104,6 +113,7 @@ Qed.
 
 Ltac step_gen := match goal with
   | _ => progress light
+  | _ => destruct_match
   | _ => apply strong_and
   | H: exists x, _ |- _ =>
     let x' := fresh x in
@@ -118,12 +128,6 @@ Ltac step_gen := match goal with
   | H: forall a b c, _ -> _ |- _ => pose proof (H _ _ _ eq_refl); clear H
   | H: forall a b c d, _ -> _ |- _ => pose proof (H _ _ _ _ eq_refl); clear H
   | H: forall a b c d e, _ -> _ |- _ => pose proof (H _ _ _ _ _ eq_refl); clear H
-  | [ |- context[match ?t with _ => _ end]] =>
-      let matched := fresh "matched" in
-      destruct t eqn:matched
-  | [ H: context[match ?t with _ => _ end] |- _ ] =>
-      let matched := fresh "matched" in
-      destruct t eqn:matched
   | _ => removeDuplicateProps
   | H := _: ?T |- _ => noUnify T string; clearbody H
   | _ => noExistential; solve [ constructor ]

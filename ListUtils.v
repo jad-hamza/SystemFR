@@ -1,5 +1,3 @@
-Require Import Omega.
-
 Require Import Coq.Lists.List.
 Require Import Coq.Strings.String.
 
@@ -78,6 +76,15 @@ Proof.
   destruct l; steps.
 Qed.
 
+Lemma app_eq_nil_iff2:
+  forall A (l l': list A),
+    nil = l ++ l' <-> (l = nil /\ l' = nil).
+Proof.
+  destruct l; steps.
+Qed.
+
+Hint Rewrite app_eq_nil_iff: list_utils.
+Hint Rewrite app_eq_nil_iff2: list_utils.
 Hint Rewrite List.app_nil_r: list_utils.
 
 Ltac list_utils :=
@@ -95,10 +102,12 @@ Ltac list_utils :=
   | H:  (?x ∈ ?l1 ++ ?l2) -> False |- _ =>
     poseNew (Mark (l1,l2,x) "not_in_append");
     poseNew (not_in_append l1 l2 x H)
-  | |- context[?l1 ++ ?l2 = nil]  => rewrite (app_eq_nil_iff _ l1 l2)
-  | H: context[?l1 ++ ?l2 = nil] |- _  => rewrite (app_eq_nil_iff _ l1 l2) in H
+  (* | |- context[?l1 ++ ?l2 = nil]  => rewrite (app_eq_nil_iff _ l1 l2) *)
+  (* | H: context[?l1 ++ ?l2 = nil] |- _  => rewrite (app_eq_nil_iff _ l1 l2) in H *)
   | _ => progress (autorewrite with list_utils in *)
   end.
+
+Hint Extern 1 => list_utils: list_utils.
 
 Lemma empty_list:
   forall A (l: list A),

@@ -5,11 +5,11 @@ Require Export SystemFR.TermListReducible.
 Require Export SystemFR.SubstitutionErase.
 
 Lemma annotated_equivalent_refl:
-   forall tvars gamma t,
+   forall Θ Γ t,
      is_erased_term t ->
      wf t 0 ->
-     subset (fv t) (support gamma) ->
-    [[ tvars; gamma ⊨ t ≡ t ]].
+     subset (fv t) (support Γ) ->
+    [[ Θ; Γ ⊨ t ≡ t ]].
 Proof.
   unfold annotated_equivalent, open_equivalent; repeat step;
     eauto using equivalent_refl with erased wf fv.
@@ -21,19 +21,19 @@ Proof.
 Qed.
 
 Lemma annotated_equivalent_trans:
-  forall tvars gamma t1 t2 t3,
-    [[ tvars; gamma ⊨ t1 ≡ t2 ]] ->
-    [[ tvars; gamma ⊨ t2 ≡ t3 ]] ->
-    [[ tvars; gamma ⊨ t1 ≡ t3 ]].
+  forall Θ Γ t1 t2 t3,
+    [[ Θ; Γ ⊨ t1 ≡ t2 ]] ->
+    [[ Θ; Γ ⊨ t2 ≡ t3 ]] ->
+    [[ Θ; Γ ⊨ t1 ≡ t3 ]].
 Proof.
   unfold annotated_equivalent, open_equivalent; steps;
     eauto using equivalent_trans.
 Qed.
 
 Lemma annotated_equivalent_sym:
-  forall tvars gamma t1 t2,
-    [[ tvars; gamma ⊨ t1 ≡ t2 ]] ->
-    [[ tvars; gamma ⊨ t2 ≡ t1 ]].
+  forall Θ Γ t1 t2,
+    [[ Θ; Γ ⊨ t1 ≡ t2 ]] ->
+    [[ Θ; Γ ⊨ t2 ≡ t1 ]].
 Proof.
   unfold annotated_equivalent, open_equivalent; steps;
     eauto using equivalent_sym.
